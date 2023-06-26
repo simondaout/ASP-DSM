@@ -68,28 +68,56 @@ if [[ -d $DATA_DIR"/"$NAME1"/IMG_PHR1A_MS_002/" ]]
 then
 	# set input images
 	DIR1=$DATA_DIR"/"$NAME1"/IMG_PHR1A_MS_002"
-	Lrpc=$DIR1"/DIM_PHR1A_MS_"$DATE1"_SEN_"$NAME1"-2.XML"
+    if [[ $SESSION_TYPE = 'rpc' ]]; then
+    Lrpc=$DIR1"/RPC_PHR1A_MS_"$DATE1"_SEN_"$NAME1"-2.XML"
+    elif [[ $SESSION_TYPE = 'pleiades' ]]; then
+    Lrpc=$DIR1"/DIM_PHR1A_MS_"$DATE1"_SEN_"$NAME1"-2.XML"
+    else
+    echo "Unknown session type, chose rpc or pleiades"
+    echo ; exit
+    fi
 else
 	# set input images
 	DIR1=$DATA_DIR"/"$NAME1"/IMG_PHR1B_MS_002"
-	Lrpc=$DIR1"/DIM_PHR1B_MS_"$DATE1"_SEN_"$NAME1"-2.XML"
+    if [[ $SESSION_TYPE = 'rpc' ]]; then
+    Lrpc=$DIR1"/RPC_PHR1B_MS_"$DATE1"_SEN_"$NAME1"-2.XML"
+    elif [[ $SESSION_TYPE = 'pleiades' ]]; then
+    Lrpc=$DIR1"/DIM_PHR1B_MS_"$DATE1"_SEN_"$NAME1"-2.XML"
+    else
+    echo "Unknown session type, chose rpc or pleiades"
+    echo ; exit
+    fi
 fi
 IMG1=$DIR1"/image1_MS.tif"
-IMG1_MP=$OUTPUT_DIR"/img1_MS_mapproj.tif"
+IMG1_MP=$DIR1"/img1_MS_mapproj.tif"
 ORTHO1=$OUTPUT_DIR"/orthoimage_MS_$DATE1.tif"
 
 if [[ -d $DATA_DIR"/"$NAME2"/IMG_PHR1A_MS_002/" ]]
 then
 	# set input images
 	DIR2=$DATA_DIR"/"$NAME2"/IMG_PHR1A_MS_002"
-	Rrpc=$DIR2"/DIM_PHR1A_MS_"$DATE2"_SEN_"$NAME2"-2.XML"
+    if [[ $SESSION_TYPE = 'rpc' ]]; then
+    Rrpc=$DIR2"/RPC_PHR1A_MS_"$DATE2"_SEN_"$NAME2"-2.XML"
+    elif [[ $SESSION_TYPE = 'pleiades' ]]; then
+    Rrpc=$DIR2"/DIM_PHR1B_MS_"$DATE2"_SEN_"$NAME2"-2.XML"
+    else
+    echo "Unknown session type, chose rpc or pleiades"
+    echo ; exit
+    fi
 else
 	# set input images
 	DIR2=$DATA_DIR"/"$NAME2"/IMG_PHR1B_MS_002"
-	Rrpc=$DIR2"/DIM_PHR1B_MS_"$DATE2"_SEN_"$NAME2"-2.XML"
+    if [[ $SESSION_TYPE = 'rpc' ]]; then
+    Rrpc=$DIR2"/RPC_PHR1A_MS_"$DATE2"_SEN_"$NAME2"-2.XML"
+    elif [[ $SESSION_TYPE = 'pleiades' ]]; then
+    Rrpc=$DIR2"/DIM_PHR1B_MS_"$DATE2"_SEN_"$NAME2"-2.XML"
+    else
+    echo "Unknown session type, chose rpc or pleiades"
+    echo ; exit
+    fi
 fi
 IMG2=$DIR2"/image2_MS.tif"
-IMG2_MP=$OUTPUT_DIR"/img2_MS_mapproj.tif"
+IMG2_MP=$DIR2"/img2_MS_mapproj.tif"
 ORTHO2=$OUTPUT_DIR"/orthoimage_MS_$DATE2.tif"
 
 ###########

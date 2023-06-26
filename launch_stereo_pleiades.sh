@@ -79,6 +79,7 @@ then
 	else
 	echo "Unknown session type, chose rpc or pleiades"
     echo ; exit	
+	fi
 else
 	# set input images
 	DIR1=$DATA_DIR"/"$NAME1"/IMG_PHR1B_P_001"
@@ -88,11 +89,12 @@ else
 	Lrpc=$DIR1"/DIM_PHR1B_P_"$DATE1"_SEN_"$NAME1"-1.XML"
 	else
 	echo "Unknown session type, chose rpc or pleiades"
-    echo ; exit	
+    echo ; exit
+	fi	
 fi
 IMG1=$DIR1"/image1.tif"
-IMG1_MP=$OUTPUT_DIR"/img1_mapproj.tif"
-ORTHO1=$OUTPUT_DIR"/orthoimage_forward.tif"
+IMG1_MP=$DIR1"/img1_mapproj.tif"
+ORTHO1=$OUTPUT_DIR"/orthoimage_forward_$DATE1.tif"
 
 if [[ -d $DATA_DIR"/"$NAME2"/IMG_PHR1A_P_001/" ]]
 then
@@ -104,7 +106,8 @@ then
 	Rrpc=$DIR2"/DIM_PHR1A_P_"$DATE2"_SEN_"$NAME2"-1.XML"
 	else
 	echo "Unknown session type, chose rpc or pleiades"
-    echo ; exit	
+    echo ; exit
+	fi	
 else
 	# set input images
 	DIR2=$DATA_DIR"/"$NAME2"/IMG_PHR1B_P_001"
@@ -114,11 +117,12 @@ else
 	Rrpc=$DIR2"/DIM_PHR1B_P_"$DATE2"_SEN_"$NAME2"-1.XML"
 	else
 	echo "Unknown session type, chose rpc or pleiades"
-    echo ; exit	
+    echo ; exit
+	fi	
 fi
 IMG2=$DIR2"/image2.tif"
-IMG2_MP=$OUTPUT_DIR"/img2_mapproj.tif"
-ORTHO2=$OUTPUT_DIR"/orthoimage_backward.tif"
+IMG2_MP=$DIR2"/img2_mapproj.tif"
+ORTHO2=$OUTPUT_DIR"/orthoimage_backward_$DATE2.tif"
 
 ###########
 # REF DEM #
@@ -192,11 +196,10 @@ mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG1 $Lrpc $IMG1
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG2 $Rrpc $IMG2_MP --bundle-adjust-prefix ba/run --nodata-value 0
 fi
 
+fi 
 # convert in Int16 format & COMPRESS
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG1_MP $ORTHO1 
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG2_MP $ORTHO2 
-
-fi 
 
 ##############
 # RUN STEREO #
