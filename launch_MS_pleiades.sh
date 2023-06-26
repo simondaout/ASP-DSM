@@ -73,7 +73,7 @@ then
     elif [[ $SESSION_TYPE = 'pleiades' ]]; then
     Lrpc=$DIR1"/DIM_PHR1A_MS_"$DATE1"_SEN_"$NAME1"-2.XML"
     else
-    echo "Unknown session type, chose rpc or pleiades"
+    echo "Unknown session type, choose rpc or pleiades"
     echo ; exit
     fi
 else
@@ -84,7 +84,7 @@ else
     elif [[ $SESSION_TYPE = 'pleiades' ]]; then
     Lrpc=$DIR1"/DIM_PHR1B_MS_"$DATE1"_SEN_"$NAME1"-2.XML"
     else
-    echo "Unknown session type, chose rpc or pleiades"
+    echo "Unknown session type, choose rpc or pleiades"
     echo ; exit
     fi
 fi
@@ -101,10 +101,10 @@ then
     elif [[ $SESSION_TYPE = 'pleiades' ]]; then
     Rrpc=$DIR2"/DIM_PHR1B_MS_"$DATE2"_SEN_"$NAME2"-2.XML"
     else
-    echo "Unknown session type, chose rpc or pleiades"
+    echo "Unknown session type, choose rpc or pleiades"
     echo ; exit
     fi
-else
+else12
 	# set input images
 	DIR2=$DATA_DIR"/"$NAME2"/IMG_PHR1B_MS_002"
     if [[ $SESSION_TYPE = 'rpc' ]]; then
@@ -112,7 +112,7 @@ else
     elif [[ $SESSION_TYPE = 'pleiades' ]]; then
     Rrpc=$DIR2"/DIM_PHR1B_MS_"$DATE2"_SEN_"$NAME2"-2.XML"
     else
-    echo "Unknown session type, chose rpc or pleiades"
+    echo "Unknown session type, choose rpc or pleiades"
     echo ; exit
     fi
 fi
@@ -135,7 +135,7 @@ fi
 # With some Airbus Pleiades data, each of the left and right images may arrive broken up into .TIF or .JP2 tiles, with names ending in R1C1.tif, R2C1.tif, etc.
 
 if [ $FORCE = 'TRUE' ]; then
-rm -f $IMG1 $IMG2
+rm -f $IMG1 $IMG2 $IMG1_MP $IMG2_MP
 fi 
 
 if [[ -f $IMG1 ]]; then

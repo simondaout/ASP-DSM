@@ -77,7 +77,7 @@ then
 	elif [[ $SESSION_TYPE = 'pleiades' ]]; then
 	Lrpc=$DIR1"/DIM_PHR1A_P_"$DATE1"_SEN_"$NAME1"-1.XML"
 	else
-	echo "Unknown session type, chose rpc or pleiades"
+	echo "Unknown session type, choose rpc or pleiades"
     echo ; exit	
 	fi
 else
@@ -88,7 +88,7 @@ else
 	elif [[ $SESSION_TYPE = 'pleiades' ]]; then
 	Lrpc=$DIR1"/DIM_PHR1B_P_"$DATE1"_SEN_"$NAME1"-1.XML"
 	else
-	echo "Unknown session type, chose rpc or pleiades"
+	echo "Unknown session type, choose rpc or pleiades"
     echo ; exit
 	fi	
 fi
@@ -105,7 +105,7 @@ then
 	elif [[ $SESSION_TYPE = 'pleiades' ]]; then
 	Rrpc=$DIR2"/DIM_PHR1A_P_"$DATE2"_SEN_"$NAME2"-1.XML"
 	else
-	echo "Unknown session type, chose rpc or pleiades"
+	echo "Unknown session type, choose rpc or pleiades"
     echo ; exit
 	fi	
 else
@@ -116,7 +116,7 @@ else
 	elif [[ $SESSION_TYPE = 'pleiades' ]]; then
 	Rrpc=$DIR2"/DIM_PHR1B_P_"$DATE2"_SEN_"$NAME2"-1.XML"
 	else
-	echo "Unknown session type, chose rpc or pleiades"
+	echo "Unknown session type, choose rpc or pleiades"
     echo ; exit
 	fi	
 fi
@@ -139,7 +139,7 @@ fi
 # With some Airbus Pleiades data, each of the left and right images may arrive broken up into .TIF or .JP2 tiles, with names ending in R1C1.tif, R2C1.tif, etc.
 
 if [ $FORCE = 'TRUE' ]; then
-rm -f $IMG1 $IMG2
+rm -f $IMG1 $IMG2 $IMG1_MP $IMG2_MP
 fi 
 
 if [[ -f $IMG1 ]]; then
@@ -182,7 +182,7 @@ cd $OUTPUT_DIR
 if [[ ! -f $IMG2_MP ]]; then
 
 #bundle_adjust $IMG1 $IMG2 $Lrpc $Rrpc -t $SESSION_TYPE --camera-weight 0 --tri-weight 0.1 --min-matches 15  --datum wgs84 -o ba/run
-bundle_adjust  $IMG1 $IMG2 $Lrpc $Rrpc -t $SESSION_TYPE --datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --min-matches 15 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1
+bundle_adjust  $IMG1 $IMG2 $Lrpc $Rrpc -t $SESSION_TYPE --datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1
 
 # ###############
 # # Map Project #
