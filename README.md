@@ -15,6 +15,15 @@ git push
 leave building
 ```
 
+How to use it
+=============
+1) download SRTM or Copernicus DSM in your area and refer it to WGS84
+2) edit asp_parameter.txt file (example available in example directory)
+3) edit pair list file (example available in example directory): list_pairs.txt
+4) run orthorectification and stereo: launch_stereo_pleiades.sh  -n list_pairs.txt
+5) run post-processing check: check_process.sh list_pair.txt
+6) run mosaic multispectral images: launch_MS_pleiades.sh -n list_pairs.txt
+
 Installation
 =============
 * The majortiy of the scripts are written in bash and python and do not need installation. Just add them to your PATH. If you are using module, an example of modulefile is available in /contrib/modulefile/asp-dsm
