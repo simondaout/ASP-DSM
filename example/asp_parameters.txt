@@ -44,7 +44,7 @@ RM_HALF_KERN="5 5" # --rm-half-kernel
 FILTER_MODE="1" # --filter-mode
 MED_FILTER_SIZE="3" # --median-filter-size: Filter subpixel results with a median
 TEXT_SMOOTH_SIZE="13" # --texture-smooth-size: Kernel size to perform texture aware disparity smoothing 
-TEXT_SMOOTH_SCALE="0.13" --texture-smooth-scale # range of 0.13 to 0.15 is typical  
+TEXT_SMOOTH_SCALE="0.13" #--texture-smooth-scale # range of 0.13 to 0.15 is typical  
 
 ######################
 # POINT2DEM SETTINGS #
