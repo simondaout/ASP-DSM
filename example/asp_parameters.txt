@@ -19,34 +19,29 @@ SESSION_TYPE="rpc" # -t
 A_M="none" # --alignment-method
 NO_DATA_S="0" # --nodata_value stereo
 CORR_KERNEL="7 7" # --corr_kernel
-COST_MODE="4" # --cost-mode
+COST_MODE="3" # --cost-mode # modification of the census transform that is more stable on low contrast terrain but may be less accurate elsewhere, use 
 ST_ALG="3" # --stereo_algorithm
-CORR_T_S="800" # --corr-tile-size
+CORR_T_S="1024" # --corr-tile-size # larger tile sizes produce better results but consume more memory.
 SUBP_MODE="9" # --subpixel-mode
 SUBP_KERNEL="5 5" # --subpixel-kernel
-CORR_S_MODE="1" # --corr_seed_mode
+CORR_S_MODE="1" # --corr_seed_mode # 1: Use low-res disparity from stereo
 
-XCORR_TH="-1" # --xcorr-threshold
+XCORR_TH="2" # --xcorr-threshold # double run time of SGM algo
 MIN_XCORR_LVL="1" # --min-xcorr-level
-SGM_C_SIZE="256" # --sgm-collar-size
+SGM_C_SIZE="256" # --sgm-collar-size #Extend SGM calculation to this distance to increase accuracy at tile borders
 
-# 31.03 added
+# pre-filtereing only used with asp-bm algo 
 PREF_MODE="2" # --prefilter-mode
 PREF_KER_M="1.4" # --prefilter-kernel-width
 
-# Filtering #
-
-FILTERING=false
-
-RM_QUANT_PC="0.8" # --rm-quantile-percentile
+RM_QUANT_PC="0.95" # --rm-quantile-percentile
 RM_QUANT_MULT="1" # --rm-quantile-multiple
-RM_CLEAN_PASS="2" # --rm-cleanup-passes
+RM_CLEAN_PASS="1" # --rm-cleanup-passes
 FILTER_MODE="1" # --filter-mode
 RM_HALF_KERN="5 5" # --rm-half-kernel
-# 29.03 added
-RM_MIN_MAT="50" # --rm-min-matches 
-RM_TH="3" # --rm-threshold
-
+MED_FILTER_SIZE="3" # --median-filter-size: Filter subpixel results with a media
+TEXT_SMOOTH_SIZE="11" # --texture-smooth-size: Kernel size to perform texture aware disparity smoothing 
+ 
 ######################
 # POINT2DEM SETTINGS #
 ######################
