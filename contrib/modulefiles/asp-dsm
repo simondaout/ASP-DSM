@@ -1,0 +1,6 @@
+#%Module
+set prefix /data/soft/ASP-DSM/
+set exec_prefix ${prefix}
+
+setenv ASPDSM           $prefix
+prepend-path PATH  $prefix
