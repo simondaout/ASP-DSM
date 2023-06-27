@@ -61,16 +61,13 @@ def calculate_pixel_sigma(diff):
     x_dim, y_dim = diff.shape[0], diff.shape[1]
     mean = np.nanmean(diff)
     out = np.zeros((x_dim, y_dim))
-    #print(np.amax(diff)) 
     print('Start pixel sigma calculation')
     for x in range(x_dim):
-        #print('Start line: {}'.format(x))
         for y in range(y_dim):
             if(np.isnan(diff[x][y])): 
                 continue
             else:
                 std = np.sqrt((diff[x][y] - mean)**2)
-                #print(std)
                 out[x][y] = std
     print('Finished pixel sigma calculation')
     return out
@@ -81,7 +78,6 @@ def multiplot_slope_error(slope, pixel_sigma, out_path, option, diff, plot_slope
     y = pixel_sigma.flatten() # sigma_pixel_flat - used to calculate stdi
     z = diff.flatten() # diff_flat - used to get mean/median error
 
-    #TODO: define with docopt, max_slope, slope_steps 
     # default 75, 5
     max_slope = plot_slope_params[0]
     slope_steps = plot_slope_params[1]
@@ -91,9 +87,8 @@ def multiplot_slope_error(slope, pixel_sigma, out_path, option, diff, plot_slope
     # digitize returns the index of the bin where value belongs to
     inds = np.digitize(x,bins)
 
-    #TODO: rename file headers to easier distinct the results
     data = pd.DataFrame({'slope': x, 'pixel_sig': y, 'bin': inds, 'diff': z})
-    grouped_data = data.groupby('bin').agg({'slope': 'median', 'pixel_sig': ['std', 'median', 'mean'], 'diff': ['median', 'mean']})
+    grouped_data = data.groupby('bin').agg({'slope': 'median', 'pixel_sig': 'std', 'diff': ['median', 'mean']})
 
     bin_centers = grouped_data['slope']['median']
     std = grouped_data['pixel_sig']['std']
