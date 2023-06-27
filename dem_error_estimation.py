@@ -3,7 +3,7 @@ dem_error_estimation.py
 -------------
 Plot the DEM error as function of the slope using the difference of two DEMs and the corresponding slope
 
-Usage: dem_error_estimation.py [--force] --diff=<path> --slope=<path> --name=<string> 
+Usage: dem_error_estimation.py [--force] [--plot_slope=<string>] --diff=<path> --slope=<path> --name=<string> 
 dem_error_estimation.py -h | --help
 
 Options:
@@ -12,7 +12,7 @@ Options:
 --slope PATH      Path to slope file   
 --name STRING     Naming for plot title
 --force           Force calculation of pixel_sigma.tif file
-
+--plot_slope      Set maximal slope and slope step size as max_slope,slope_step_size [default:75,5]
 """
 ##########
 # IMPORT #
@@ -75,7 +75,7 @@ def calculate_pixel_sigma(diff):
     print('Finished pixel sigma calculation')
     return out
 
-def multiplot_slope_error(slope, pixel_sigma, out_path, option, diff):
+def multiplot_slope_error(slope, pixel_sigma, out_path, option, diff, plot_slope_params):
 
     x = slope.flatten() # slope_flat - used to plot slope histogram
     y = pixel_sigma.flatten() # sigma_pixel_flat - used to calculate stdi
@@ -83,8 +83,8 @@ def multiplot_slope_error(slope, pixel_sigma, out_path, option, diff):
 
     #TODO: define with docopt, max_slope, slope_steps 
     # default 75, 5
-    max_slope = 75
-    slope_steps = 5
+    max_slope = plot_slope_params[0]
+    slope_steps = plot_slope_params[1]
 
     bins = np.arange(0, max_slope, slope_steps)
     histo_bins = np.arange(0, max_slope, slope_steps)
@@ -92,17 +92,17 @@ def multiplot_slope_error(slope, pixel_sigma, out_path, option, diff):
     inds = np.digitize(x,bins)
 
     #TODO: rename file headers to easier distinct the results
-    data = pd.DataFrame({'x': x, 'y': y, 'bin': inds, 'z': z})
-    grouped_data = data.groupby('bin').agg({'x': 'median', 'y': ['std', 'median', 'mean'], 'z': ['median', 'mean']})
+    data = pd.DataFrame({'slope': x, 'pixel_sig': y, 'bin': inds, 'diff': z})
+    grouped_data = data.groupby('bin').agg({'slope': 'median', 'pixel_sig': ['std', 'median', 'mean'], 'diff': ['median', 'mean']})
 
-    bin_centers = grouped_data['x']['median']
-    std = grouped_data['y']['std']
+    bin_centers = grouped_data['slope']['median']
+    std = grouped_data['pixel_sig']['std']
     # need to calculate the STD for one DEM - see paper Eq. 2
-    grouped_data['stdi'] = grouped_data['y']['std']/np.sqrt(2)
+    grouped_data['stdi'] = grouped_data['pixel_sig']['std']/np.sqrt(2)
     stdi = grouped_data['stdi']
 
-    median = grouped_data['z']['median']
-    mean = grouped_data['z']['mean']
+    median = grouped_data['diff']['median']
+    mean = grouped_data['diff']['mean']
     print(grouped_data)
     
     grouped_data.to_csv(os.path.join(out_path, 'statistics.txt'), sep='\t')
@@ -113,7 +113,7 @@ def multiplot_slope_error(slope, pixel_sigma, out_path, option, diff):
     ax1.plot(bin_centers, mean, '-r', label='Mean')
     ax1.plot(bin_centers, stdi, '-k', label='STDi')
 
-    ax1.set_xlim(0, 75)
+    ax1.set_xlim(0, max_slope)
     ax1.set_ylim(-2, 10)
     ax1.set_xlabel('Slope [deg]')
     ax1.set_ylabel('DEM Error [m]')
@@ -122,21 +122,19 @@ def multiplot_slope_error(slope, pixel_sigma, out_path, option, diff):
 
     ax2.hist(x, bins=histo_bins, alpha=0.7)
     
-    ax2.set_xlim(0, 75)
+    ax2.set_xlim(0, max_slope)
     ax2.set_xlabel('Slope [deg]')
     ax2.set_ylabel('Frequency')
 
     plt.tight_layout()
 
     plt.show()
-    
-    return (fig, ax1, ax2)
 
 def create_pixel_sigma_file(diff, pixel_sigma_file):
     pixel_sigma_results = calculate_pixel_sigma(diff)
     save_to_file(pixel_sigma_results, pixel_sigma_file, pixel_sigma_results.shape[1], pixel_sigma_results.shape[0])
 
-def prepare_and_plot_data(slope_file, diff_file, pixel_sigma_file, option):
+def prepare_and_plot_data(slope_file, diff_file, pixel_sigma_file, option, plot_slope_params):
     
     print('Read slope data')
     slope = read_from_file(slope_file)
@@ -154,7 +152,7 @@ def prepare_and_plot_data(slope_file, diff_file, pixel_sigma_file, option):
     # this directory will be handled as output dir for statistics.txt
     diff_path = os.path.dirname(diff_file)
     print('Start generating slope plot')
-    multiplot_slope_error(slope, pixel_sigma, diff_path, option, diff)
+    multiplot_slope_error(slope, pixel_sigma, diff_path, option, diff, plot_slope_params)
     
 ########
 # MAIN #
@@ -181,6 +179,14 @@ exist_pixel_sigma = os.path.isfile(pixel_sigma_file)
 # force recomputation of sigma_pixel.tif
 force_pixel_sigma = arguments['--force']
 
+if(arguments['--plot_slope']):
+    plot_slope = arguments['--plot_slope'].split(',')
+    # plot_slope_params = (max_slope, slope_step_size)
+    plot_slope_params = (int(plot_slope[0]), int(plot_slope[1]))
+else:
+    plot_slope_params = (75, 5)
+
+
 if(not exist_pixel_sigma or force_pixel_sigma):
     if(not exist_pixel_sigma):
         print('pixel_sigma.tif not found. Compute sigma_pixel.tif')
@@ -196,7 +202,7 @@ if(not exist_pixel_sigma or force_pixel_sigma):
 #############
 
 # SINGLE PLOT #
-prepare_and_plot_data(slope_file, diff_file, pixel_sigma_file, option)
+prepare_and_plot_data(slope_file, diff_file, pixel_sigma_file, option, plot_slope_params)
 
 
 
