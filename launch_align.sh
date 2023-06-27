@@ -71,18 +71,22 @@ if [[ ! -d $OUTPUT_DIR  ]]; then
 mkdir $OUTPUT_DIR
 fi
 
+if [[ ! -f $OUTPUT_DIR/run-trans_reference.tif ]]; then
 pc_align --max-displacement 100 --save-transformed-source-points --save-inv-transformed-reference-points $DIR1/demPleiades/dem-PC.tif $DIR2/demPleiades/dem-PC.tif -o $OUTPUT_DIR/run
 
 cd $OUTPUT_DIR
 point2dem --t_srs EPSG:$UTM  --tr $RES run-trans_reference.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA --threads $THREADS
 
+fi
+
+cd $OUTPUT_DIR
 # compute diff and slope on diff
-gdal_calc.py -A $DIR1/demPleiades/dem-PC.tif -B $OUTPUT_DIR/run-trans_reference.tif --outfile $OUTPUT_DIR/diff-dsm.tiff --calc A-B
+gdal_calc.py -A $DIR2/demPleiades/dem-DEM.tif -B $OUTPUT_DIR/run-trans_reference.tif --outfile $OUTPUT_DIR/diff-dsm.tiff --calc A-B
 gdaldem slope $OUTPUT_DIR/run-trans_reference.tif  $OUTPUT_DIR/dsm-slope.tiff  -of GTiff -b 1 -s 1.0 
 
 # convert in Int16 format & COMPRESS
-gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $OUTPUT_DIR/diff-dsm.tiff diff-dsm-$DIR1-$DIR2.tiff
-gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $OUTPUT_DIR/dsm-slope-$DIR1-$DIR2.tiff 
+gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $OUTPUT_DIR/diff-dsm.tiff ../diff-dsm-$DIR1-$DIR2.tiff
+gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $OUTPUT_DIR/dsm-slope.tiff ../dsm-slope-$DIR1-$DIR2.tiff 
 
 done
 
