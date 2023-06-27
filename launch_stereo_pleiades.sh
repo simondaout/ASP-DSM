@@ -4,7 +4,7 @@
 Help()
 {
    # Display Help
-   echo "Syntax: launch_stereo_dem.sh -n pair_list [-h|v|f]"
+   echo "Syntax: launch_stereo_pleiades.sh -n pair_list [-h|v|f]"
    echo "options:"
    echo "n	   input file: list of pairs"
    echo "h     Print this Help."
@@ -258,8 +258,8 @@ else
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG3 $Mrpc $IMG3_MP --bundle-adjust-prefix ba/run --nodata-value 0
 fi
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG3_MP $ORTHO3 
+fi
 
-else
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG1 $Lrpc $IMG1_MP --nodata-value 0
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG2 $Rrpc $IMG2_MP --nodata-value 0
@@ -268,7 +268,6 @@ mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG1 $Lrpc $IMG1
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG2 $Rrpc $IMG2_MP --bundle-adjust-prefix ba/run --nodata-value 0
 fi
 fi
-fi 
 # convert in Int16 format & COMPRESS
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG1_MP $ORTHO1 
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG2_MP $ORTHO2 
