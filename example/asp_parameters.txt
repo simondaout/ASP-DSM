@@ -34,14 +34,18 @@ SGM_C_SIZE="256" # --sgm-collar-size #Extend SGM calculation to this distance to
 PREF_MODE="2" # --prefilter-mode
 PREF_KER_M="1.4" # --prefilter-kernel-width
 
+# remove outliers
 RM_QUANT_PC="0.95" # --rm-quantile-percentile
 RM_QUANT_MULT="1" # --rm-quantile-multiple
 RM_CLEAN_PASS="1" # --rm-cleanup-passes
-FILTER_MODE="1" # --filter-mode
 RM_HALF_KERN="5 5" # --rm-half-kernel
-MED_FILTER_SIZE="3" # --median-filter-size: Filter subpixel results with a media
-TEXT_SMOOTH_SIZE="11" # --texture-smooth-size: Kernel size to perform texture aware disparity smoothing 
- 
+
+# cleanup output from SGM Algo: If your images have good texture throughout it may be best to disable these filters. 
+FILTER_MODE="1" # --filter-mode
+MED_FILTER_SIZE="3" # --median-filter-size: Filter subpixel results with a median
+TEXT_SMOOTH_SIZE="13" # --texture-smooth-size: Kernel size to perform texture aware disparity smoothing 
+TEXT_SMOOTH_SCALE="0.13" --texture-smooth-scale # range of 0.13 to 0.15 is typical  
+
 ######################
 # POINT2DEM SETTINGS #
 ######################
@@ -53,6 +57,4 @@ NO_DATA_DEM="0" # --nodata_value dem
 TIF_COMPR="None" # --tif-compress
 MAX_V_TRIANG_ERR="2" # --max-valid-triangulation-error
 RM_OUTL_PARA="60 3" # --remove-outliers-param
-
-
 
