@@ -5,7 +5,7 @@ dem_error_estimation.py
 -------------
 Plot the DEM error as function of the slope using the difference of two DEMs and the corresponding slope
 
-Usage: dem_error_estimation.py --diff=<path> --slope=<path> [--name=<string>] 
+Usage: dem_error_estimation.py --diff=<path> --slope=<path> [--name=<string>] [--plot_slope=<string>] 
 dem_error_estimation.py -h | --help
 
 Options:
@@ -13,7 +13,7 @@ Options:
 --diff PATH       Path to difference file
 --slope PATH      Path to slope file   
 --name STRING     Naming for plot title
-
+--plot_slope      Set maximal slope and slope step size as max_slope,slope_step_size [default:98th percentile,1+max_slope/10]
 """
 ##########
 # IMPORT #
@@ -32,13 +32,6 @@ import docopt
 # FUNCTIONS #
 #############
 
-def save_to_file(diff, output_path, ncol, nrow):
-    drv = gdal.GetDriverByName('GTiff')
-    dst_ds = drv.Create(output_path, ncol, nrow, 1, gdal.GDT_Float32)
-    dst_band = dst_ds.GetRasterBand(1)
-    dst_band.SetNoDataValue(-9999)
-    dst_band.WriteArray(diff)
-
 def read_from_file(input_file):
 
     ds = gdal.OpenEx(input_file, allowed_drivers=['GTiff'])
@@ -56,14 +49,17 @@ def read_from_file(input_file):
 
     return values_copy
 
-def multiplot_slope_error(slope, out_path, option, diff):
+def multiplot_slope_error(slope, out_path, option, diff, plot_slope_params):
 
     x = slope.flatten() # slope_flat - used to plot slope histogram
     y = diff.flatten() # diff_flat - used to get mean/median error
 
-    #TODO: define with docopt, max_slope, slope_steps 
-    max_slope = np.nanpercentile(x,92)
-    slope_steps = 1 + int(max_slope/10)
+    if(len(plot_slope_params) == 0):
+        max_slope = np.nanpercentile(x,98)
+        slope_steps = 1 + int(max_slope/10)
+    else:
+        max_slope = plot_slope_params[0]
+        slope_steps = plot_slope_params[1]
     print(max_slope,slope_steps)
 
     bins = np.arange(0, max_slope, slope_steps)
@@ -71,7 +67,6 @@ def multiplot_slope_error(slope, out_path, option, diff):
     # digitize returns the index of the bin where value belongs to
     inds = np.digitize(x,bins)
 
-    #TODO: rename file headers to easier distinct the results
     data = pd.DataFrame({'slope': x, 'bin': inds, 'diff': y})
     grouped_data = data.groupby('bin').agg({'slope': 'median', 'diff': ['std', 'median', 'mean']})
 
@@ -93,7 +88,7 @@ def multiplot_slope_error(slope, out_path, option, diff):
     ax1.plot(bin_centers, mean, '-r', label='Mean')
     ax1.plot(bin_centers, stdi, '-k', label='STDi')
 
-    y = np.array([median,mean,stdi]); ymax = np.nanmax(y); ymin = np.nanmin(y)
+    y = np.array([median,mean,stdi]); ymax = np.nanmax(y)+1; ymin = np.nanmin(y)-1
 
     ax1.set_xlim(0, max_slope)
     ax1.set_ylim(ymin, ymax)
@@ -104,7 +99,7 @@ def multiplot_slope_error(slope, out_path, option, diff):
 
     ax2.hist(x, bins=histo_bins, alpha=0.7)
     
-    ax2.set_xlim(0, 75)
+    ax2.set_xlim(0, max_slope)
     ax2.set_xlabel('Slope [deg]')
     ax2.set_ylabel('Frequency')
 
@@ -113,7 +108,7 @@ def multiplot_slope_error(slope, out_path, option, diff):
     plt.show()
     
 
-def prepare_and_plot_data(slope_file, diff_file, option):
+def prepare_and_plot_data(slope_file, diff_file, option, plot_slope_params):
     
     print('Read slope data')
     slope = read_from_file(slope_file)
@@ -125,7 +120,7 @@ def prepare_and_plot_data(slope_file, diff_file, option):
     # this directory will be handled as output dir for statistics.txt
     diff_path = os.path.dirname(diff_file)
     print('Start generating slope plot')
-    multiplot_slope_error(slope, diff_path, option, diff)
+    multiplot_slope_error(slope, diff_path, option, diff, plot_slope_params)
     
 ########
 # MAIN #
@@ -143,13 +138,20 @@ option = arguments['--name']
 # destination path will be path of diff file
 dest_path = os.path.dirname(diff_file)
 
+# define plot parameters 
+if(arguments['--plot_slope']):
+    plot_slope = arguments['--plot_slope'].split(',')
+    plot_slope_params = (int(plot_slope[0]), int(plot_slope[1]))
+else:
+    plot_slope_params = ()
+
 
 #############
 # PLOT DATA #
 #############
 
 # SINGLE PLOT #
-prepare_and_plot_data(slope_file, diff_file, option)
+prepare_and_plot_data(slope_file, diff_file, option, plot_slope_params)
 
 
 
