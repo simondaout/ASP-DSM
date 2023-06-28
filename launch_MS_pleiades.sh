@@ -52,7 +52,7 @@ ROOT=$PWD
 
 TRISTEREO=FALSE
 # check if stereo or tri-stereo
-cols=`awk '{print NF}' list_pairs.txt | tail -n 1`
+cols=`awk '{print NF}' $PAIRS | tail -n 1`
 if [[ $cols -eq 6 ]]; then
 TRISTEREO=TRUE
 elif [[ $cols -eq 4 ]]; then
