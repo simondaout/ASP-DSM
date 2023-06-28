@@ -57,7 +57,7 @@ do
    echo "Processing...."
    echo $ligne
    if [ "$ligne" = "" ]; then break; fi
-   set -- $ligne ; DIR1=$ROOT/$1 ; DIR2=$ROOT/$2 ;  
+   set -- $ligne ; DIR1=$1 ; DIR2=$2 ;  
 
 cd $ROOT
 # set output dir
@@ -71,25 +71,29 @@ if [[ ! -d $OUTPUT_DIR  ]]; then
 mkdir $OUTPUT_DIR
 fi
 
-if [[ ! -f $OUTPUT_DIR/run-trans_reference.tif ]]; then
-pc_align --max-displacement 100 --save-transformed-source-points --save-inv-transformed-reference-points $DIR1/demPleiades/dem-PC.tif $DIR2/demPleiades/dem-PC.tif -o $OUTPUT_DIR/run
-
+if [[ ! -f $OUTPUT_DIR/run-trans_reference-DEM.tif ]]; then
+pc_align --max-displacement 100 --save-transformed-source-points --save-inv-transformed-reference-points $ROOT/$DIR1/demPleiades/dem-PC.tif $ROOT/$DIR2/demPleiades/dem-PC.tif -o $OUTPUT_DIR/run
 cd $OUTPUT_DIR
 point2dem --t_srs EPSG:$UTM  --tr $RES run-trans_reference.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA --threads $THREADS
-
 fi
 
 cd $OUTPUT_DIR
-# compute diff and slope on diff
-gdal_calc.py -A $DIR2/demPleiades/dem-DEM.tif -B $OUTPUT_DIR/run-trans_reference.tif --outfile $OUTPUT_DIR/diff-dsm.tiff --calc A-B
-gdaldem slope $OUTPUT_DIR/run-trans_reference.tif  $OUTPUT_DIR/dsm-slope.tiff  -of GTiff -b 1 -s 1.0 
 
-# convert in Int16 format & COMPRESS
-gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $OUTPUT_DIR/diff-dsm.tiff ../diff-dsm-$DIR1-$DIR2.tiff
-gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $OUTPUT_DIR/dsm-slope.tiff ../dsm-slope-$DIR1-$DIR2.tiff 
+if [[ ! -f $OUTPUT_DIR/diff-dsm.tif ]]; then
+# clipping the ref DEM with the another DEM and compute diff
+echo raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=diff-dsm.tif
+raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=diff-dsm.tif
+fi 
+
+if [[ ! -f $OUTPUT_DIR/$OUTPUT_DIR/dsm1_clipped.tif ]]; then
+# compute slope on reference DEM
+echo raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=dsm1_clipped.tif
+raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=$OUTPUT_DIR/dsm1_clipped.tif
+echo gdaldem slope $OUTPUT_DIR/run-trans_reference-DEM.tif  $OUTPUT_DIR/dsm1_clipped_slope.tif  -of GTiff -b 1 -s 1.0
+gdaldem slope $OUTPUT_DIR/dsm1_clipped.tif  $OUTPUT_DIR/dsm1_clipped_slope.tif  -of GTiff -b 1 -s 1.0 
+fi
+
+# compute error estimation
+dem_error_estimation.py --diff=$OUTPUT_DIR/diff-dsm.tif --slope=$OUTPUT_DIR/dsm1_clipped_slope.tif
 
 done
-
-
-
-

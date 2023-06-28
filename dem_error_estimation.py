@@ -5,7 +5,7 @@ dem_error_estimation.py
 -------------
 Plot the DEM error as function of the slope using the difference of two DEMs and the corresponding slope
 
-Usage: dem_error_estimation.py [--force] --diff=<path> --slope=<path> --name=<string> 
+Usage: dem_error_estimation.py [--force] --diff=<path> --slope=<path> [--name=<string>] 
 dem_error_estimation.py -h | --help
 
 Options:
