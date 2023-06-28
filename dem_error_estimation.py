@@ -32,13 +32,6 @@ import docopt
 # FUNCTIONS #
 #############
 
-def save_to_file(diff, output_path, ncol, nrow):
-    drv = gdal.GetDriverByName('GTiff')
-    dst_ds = drv.Create(output_path, ncol, nrow, 1, gdal.GDT_Float32)
-    dst_band = dst_ds.GetRasterBand(1)
-    dst_band.SetNoDataValue(-9999)
-    dst_band.WriteArray(diff)
-
 def read_from_file(input_file):
 
     ds = gdal.OpenEx(input_file, allowed_drivers=['GTiff'])
