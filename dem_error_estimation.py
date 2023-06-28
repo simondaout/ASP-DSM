@@ -62,9 +62,9 @@ def multiplot_slope_error(slope, out_path, option, diff):
     y = diff.flatten() # diff_flat - used to get mean/median error
 
     #TODO: define with docopt, max_slope, slope_steps 
-    # default 75, 5
-    max_slope = 75
-    slope_steps = 5
+    max_slope = np.nanpercentile(x,98)
+    slope_steps = 1 + int(max_slope/10)
+    print(max_slope,slope_steps)
 
     bins = np.arange(0, max_slope, slope_steps)
     histo_bins = np.arange(0, max_slope, slope_steps)
@@ -93,8 +93,10 @@ def multiplot_slope_error(slope, out_path, option, diff):
     ax1.plot(bin_centers, mean, '-r', label='Mean')
     ax1.plot(bin_centers, stdi, '-k', label='STDi')
 
-    ax1.set_xlim(0, 75)
-    ax1.set_ylim(-2, 10)
+    y = np.array([median,mean,stdi]); ymax = np.nanmax(y); ymin = np.nanmin(y)
+
+    ax1.set_xlim(0, max_slope)
+    ax1.set_ylim(ymin, ymax)
     ax1.set_xlabel('Slope [deg]')
     ax1.set_ylabel('DEM Error [m]')
     ax1.set_title('DEM Error as Function of Slope for {}'.format(option))
