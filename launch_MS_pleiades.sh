@@ -52,10 +52,10 @@ ROOT=$PWD
 
 TRISTEREO=FALSE
 # check if stereo or tri-stereo
-cols=`awk '{print NF}' list_pairs.txt | tail -n 1`
-if [[ $cols=6 ]]; then
+cols=`awk '{print NF}' $PAIRS | tail -n 1`
+if [[ $cols -eq 6 ]]; then
 TRISTEREO=TRUE
-elif [[ $cols=4 ]]; then
+elif [[ $cols -eq 4 ]]; then
 TRISTEREO=FALSE
 else
 echo "Invalid number of columns in input pair list file. Must be 4 (stereo) or 6 (tri-stereo)"
@@ -69,7 +69,7 @@ do
    echo "Processing...."
    echo $ligne
    if [ "$ligne" = "" ]; then break; fi
-   if [[ $TRISTEREO=TRUE  ]]; then
+   if [[ $TRISTEREO = 'TRUE'  ]]; then
    set -- $ligne ; DATE1=$1 ; NAME1=$2 ; DATE2=$3 ; NAME2=$4 ; DATE3=$5 ; NAME3=$6 ;
    else
    set -- $ligne ; DATE1=$1 ; NAME1=$2 ; DATE2=$3 ; NAME2=$4 ;
@@ -136,7 +136,7 @@ IMG2=$DIR2"/image2_MS.tif"
 IMG2_MP=$DIR2"/img2_MS_mapproj.tif"
 ORTHO2=$OUTPUT_DIR"/orthoimage_MS_$DATE2.tif"
 
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 
 if [[ -d $DATA_DIR"/"$NAME3"/IMG_PHR1A_P_001/" ]]
 then
@@ -183,7 +183,7 @@ fi
 # With some Airbus Pleiades data, each of the left and right images may arrive broken up into .TIF or .JP2 tiles, with names ending in R1C1.tif, R2C1.tif, etc.
 
 if [ $FORCE = 'TRUE' ]; then
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 rm -f $IMG1 $IMG2 $IMG3 $IMG1_MP $IMG2_MP $IMG3_MP
 else
 rm -f $IMG1 $IMG2 $IMG1_MP $IMG2_MP
@@ -206,7 +206,7 @@ else
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR2"/vrt.tif" $IMG2
 fi
 
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 if [[ -f $IMG3 ]]; then
     echo "$IMG3 exists."
 else
@@ -239,7 +239,7 @@ mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG2 $Rrpc $IMG2
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG1_MP $ORTHO1 
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG2_MP $ORTHO2 
 
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG3 $Mrpc $IMG3_MP --nodata-value 0
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG3_MP $ORTHO3
 fi

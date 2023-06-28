@@ -1,0 +1,7 @@
+#%Module
+set prefix /data/soft/ASP-DSM/
+set exec_prefix ${prefix}
+
+prepend-path PYTHONPATH  $prefix/contrib/python
+setenv ASPDSM           $prefix
+prepend-path PATH  $prefix

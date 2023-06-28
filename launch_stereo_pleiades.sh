@@ -4,7 +4,7 @@
 Help()
 {
    # Display Help
-   echo "Syntax: launch_stereo_dem.sh -n pair_list [-h|v|f]"
+   echo "Syntax: launch_stereo_pleiades.sh -n pair_list [-h|v|f]"
    echo "options:"
    echo "n	   input file: list of pairs"
    echo "h     Print this Help."
@@ -56,10 +56,10 @@ ROOT=$PWD
 
 TRISTEREO=FALSE
 # check if stereo or tri-stereo
-cols=`awk '{print NF}' list_pairs.txt | tail -n 1`
-if [[ $cols=6 ]]; then
+cols=`awk '{print NF}' $PAIRS | tail -n 1`
+if [[ $cols -eq '6' ]]; then
 TRISTEREO=TRUE
-elif [[ $cols=4 ]]; then
+elif [[ $cols  -eq '4' ]]; then
 TRISTEREO=FALSE
 else
 echo "Invalid number of columns in input pair list file. Must be 4 (stereo) or 6 (tri-stereo)"
@@ -73,7 +73,7 @@ do
    echo "Processing...."
    echo $ligne
    if [ "$ligne" = "" ]; then break; fi
-   if [[ $TRISTEREO=TRUE  ]]; then
+   if [[ $TRISTEREO = 'TRUE'  ]]; then
    set -- $ligne ; DATE1=$1 ; NAME1=$2 ; DATE2=$3 ; NAME2=$4 ; DATE3=$5 ; NAME3=$6 ; 
    else
    set -- $ligne ; DATE1=$1 ; NAME1=$2 ; DATE2=$3 ; NAME2=$4 ;
@@ -139,7 +139,7 @@ IMG2=$DIR2"/image2.tif"
 IMG2_MP=$DIR2"/img2_mapproj.tif"
 ORTHO2=$OUTPUT_DIR"/orthoimage_backward_$DATE2.tif"
 
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 
 if [[ -d $DATA_DIR"/"$NAME3"/IMG_PHR1A_P_001/" ]]
 then
@@ -186,7 +186,7 @@ fi
 # With some Airbus Pleiades data, each of the left and right images may arrive broken up into .TIF or .JP2 tiles, with names ending in R1C1.tif, R2C1.tif, etc.
 
 if [ $FORCE = 'TRUE' ]; then
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 rm -f $IMG1 $IMG2 $IMG3 $IMG1_MP $IMG2_MP $IMG3_MP 
 else
 rm -f $IMG1 $IMG2 $IMG1_MP $IMG2_MP
@@ -209,7 +209,7 @@ else
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR2"/vrt.tif" $IMG2
 fi
 
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 if [[ -f $IMG3 ]]; then
     echo "$IMG3 exists."
 else
@@ -241,7 +241,7 @@ cd $OUTPUT_DIR
 # perform bundle and map project only if map projected image does not exist
 if [[ ! -f $IMG2_MP ]]; then
 
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 bundle_adjust  $IMG1 $IMG2 $IMG3 $Lrpc $Rrpc $Mrpc -t $SESSION_TYPE --datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1
 else
 bundle_adjust  $IMG1 $IMG2 $Lrpc $Rrpc -t $SESSION_TYPE --datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1
@@ -251,15 +251,15 @@ fi
 # # Map Project #
 # ###############
 
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG3 $Mrpc $IMG3_MP --nodata-value 0
 else
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG3 $Mrpc $IMG3_MP --bundle-adjust-prefix ba/run --nodata-value 0
 fi
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG3_MP $ORTHO3 
+fi
 
-else
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG1 $Lrpc $IMG1_MP --nodata-value 0
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG2 $Rrpc $IMG2_MP --nodata-value 0
@@ -268,7 +268,7 @@ mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG1 $Lrpc $IMG1
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG2 $Rrpc $IMG2_MP --bundle-adjust-prefix ba/run --nodata-value 0
 fi
 fi
-fi 
+
 # convert in Int16 format & COMPRESS
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG1_MP $ORTHO1 
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG2_MP $ORTHO2 
@@ -277,21 +277,21 @@ gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubi
 # RUN STEREO #
 ##############
 
-if [[ ! -f "demPleiades/dem-PC.tif" ]]; then
 
-# if filtering is selected in asp_parameters.txt, the following parameters will be included for parallel_stereo: rm-quantile-percentile, rm-quantile-multiple, rm-cleanup-passes, filter-mode, rm-half-kernel, rm-min-matches, rm-threshold
+cd $OUTPUT_DIR
 
-if [[ $TRISTEREO=TRUE  ]]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
 
-if [ $FILTERING = true ]
-then
+if [[ ! -f "demPleiades-filt/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --rm-min-matches $RM_MIN_MAT --rm-threshold $RM_TH
-else
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP  $Lrpc $Rrpc $Mrpc demPleiades/dem $DEM_UTM_FILE  --bundle-adjust-prefix ba/run --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --rm-min-matches $RM_MIN_MAT --rm-threshold $RM_TH
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades-filt/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE --texture-smooth-scale $TEXT_SMOOTH_SCALE 
+else 
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP  $Lrpc $Rrpc $Mrpc demPleiades-filt/dem $DEM_UTM_FILE  --bundle-adjust-prefix ba/run --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE--texture-smooth-scale $TEXT_SMOOTH_SCALE
 fi 
+fi
 
-else
+cd $OUTPUT_DIR
+if [[ ! -f "demPleiades/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
 parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP  $Lrpc $Rrpc $Mrpc demPleiades/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M
 else
@@ -301,17 +301,17 @@ fi
 
 else
 
-if [ $FILTERING = true ]
-then
-
+if [[ ! -f "demPleiades-filt/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --rm-min-matches $RM_MIN_MAT --rm-threshold $RM_TH
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades-filt/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE --texture-smooth-scale $TEXT_SMOOTH_SCALE
 else
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades/dem $DEM_UTM_FILE  --bundle-adjust-prefix ba/run --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --rm-min-matches $RM_MIN_MAT --rm-threshold $RM_TH
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades-filt/dem $DEM_UTM_FILE  --bundle-adjust-prefix ba/run --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE --texture-smooth-scale $TEXT_SMOOTH_SCALE
+fi
 fi
 
-else
+cd $OUTPUT_DIR
 
+if [[ ! -f "demPleiades/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
 parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --processes $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M
 else
@@ -320,24 +320,28 @@ fi
 fi
 
 fi
-fi
 
 #############
 # POINT2DEM #
 #############
 
 # the dem-PC file is stored in demPleiades; the final dem-DEM.tif will be created within demPleiades
-cd $OUTPUT_DIR/demPleiades
-
 if [[ ! -f "demPleiades/dem-DEM.tif" ]]; then
+cd $OUTPUT_DIR/demPleiades
 point2dem --t_srs EPSG:$UTM --tr $RES dem-PC.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA --threads $THREADS
-
 # convert in Int16 format & COMPRESS
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic dem-DEM.tif ../dsm_denoised.tiff
-
 # create hillshade
 gdaldem hillshade ../dsm_denoised.tiff ../hillshade_denoised.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
+fi
 
+if [[ ! -f "demPleiades-filt/dem-DEM.tif" ]]; then
+cd $OUTPUT_DIR/demPleiades-filt
+point2dem --t_srs EPSG:$UTM --tr $RES dem-PC.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA --threads $THREADS
+# convert in Int16 format & COMPRESS
+gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic dem-DEM.tif ../dsm_denoised_filtered.tiff
+# create hillshade
+gdaldem hillshade ../dsm_denoised_filtered.tiff ../hillshade_denoised_filtered.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
 fi
 
 # exit pair

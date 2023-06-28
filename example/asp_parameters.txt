@@ -1,0 +1,60 @@
+#####################
+# GENERAL VARIABLES #
+#####################
+
+DEM_FILE=$PWD"/cop_dem30_58_58_22_23.tif"
+DATA_DIR="/data/ARCHIVES/Oman/"
+UTM="32640"
+RES="2"
+RESMP="1"
+THREADS="20"
+GDAL_OUT_RES="30 30" # -tr set file output resolution
+RESAMP_M="cubic" # resample method
+
+###################
+# STEREO SETTINGS #
+###################
+
+SESSION_TYPE="rpc" # -t
+A_M="none" # --alignment-method
+NO_DATA_S="0" # --nodata_value stereo
+CORR_KERNEL="7 7" # --corr_kernel
+COST_MODE="3" # --cost-mode # use 3 on good texture terrain and 4 on textureless terrain
+ST_ALG="3" # --stereo_algorithm
+CORR_T_S="1024" # --corr-tile-size # larger tile sizes produce better results but consume more memory.
+SUBP_MODE="9" # --subpixel-mode
+SUBP_KERNEL="5 5" # --subpixel-kernel
+CORR_S_MODE="1" # --corr_seed_mode # 1: Use low-res disparity from stereo
+
+XCORR_TH="2" # --xcorr-threshold # double run time of SGM algo
+MIN_XCORR_LVL="1" # --min-xcorr-level
+SGM_C_SIZE="256" # --sgm-collar-size #Extend SGM calculation to this distance to increase accuracy at tile borders
+
+# pre-filtereing only used with asp-bm algo 
+PREF_MODE="2" # --prefilter-mode
+PREF_KER_M="1.4" # --prefilter-kernel-width
+
+# remove outliers
+RM_QUANT_PC="0.95" # --rm-quantile-percentile
+RM_QUANT_MULT="1" # --rm-quantile-multiple
+RM_CLEAN_PASS="1" # --rm-cleanup-passes
+RM_HALF_KERN="5 5" # --rm-half-kernel
+
+# cleanup output from SGM Algo: If your images have good texture throughout it may be best to disable these filters. 
+FILTER_MODE="1" # --filter-mode
+MED_FILTER_SIZE="3" # --median-filter-size: Filter subpixel results with a median
+TEXT_SMOOTH_SIZE="13" # --texture-smooth-size: Kernel size to perform texture aware disparity smoothing 
+TEXT_SMOOTH_SCALE="0.13" #--texture-smooth-scale # range of 0.13 to 0.15 is typical  
+
+######################
+# POINT2DEM SETTINGS #
+######################
+
+MED_F_PAR="30 10" # --median-filter-params
+DEM_HOLE_F_L="400" # --dem-hole-fill-len
+ERODE_L="0" # --erode-length
+NO_DATA_DEM="0" # --nodata_value dem
+TIF_COMPR="None" # --tif-compress
+MAX_V_TRIANG_ERR="2" # --max-valid-triangulation-error
+RM_OUTL_PARA="60 3" # --remove-outliers-param
+
