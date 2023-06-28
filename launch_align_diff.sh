@@ -77,15 +77,13 @@ cd $OUTPUT_DIR
 point2dem --t_srs EPSG:$UTM  --tr $RES run-trans_reference.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA --threads $THREADS
 fi
 
-cd $OUTPUT_DIR
-
 if [[ ! -f $OUTPUT_DIR/diff-dsm.tif ]]; then
 # clipping the ref DEM with the another DEM and compute diff
 echo raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=diff-dsm.tif
 raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=diff-dsm.tif
 fi 
 
-if [[ ! -f $OUTPUT_DIR/$OUTPUT_DIR/dsm1_clipped.tif ]]; then
+if [[ ! -f $OUTPUT_DIR/dsm1_clipped.tif ]]; then
 # compute slope on reference DEM
 echo raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=dsm1_clipped.tif
 raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=$OUTPUT_DIR/dsm1_clipped.tif
