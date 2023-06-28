@@ -145,7 +145,7 @@ output_file=None):
   
   ds1 = None
   ds2 = None
-  diff = numpy.abs(bandtar - bandref)
+  diff = bandtar - bandref
   diff[fill_bandtar] = nodata
   diff[fill_bandref] = nodata
   

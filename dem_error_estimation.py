@@ -62,7 +62,7 @@ def multiplot_slope_error(slope, out_path, option, diff):
     y = diff.flatten() # diff_flat - used to get mean/median error
 
     #TODO: define with docopt, max_slope, slope_steps 
-    max_slope = np.nanpercentile(x,98)
+    max_slope = np.nanpercentile(x,92)
     slope_steps = 1 + int(max_slope/10)
     print(max_slope,slope_steps)
 
