@@ -104,7 +104,7 @@ def multiplot_slope_error(slope, out_path, option, diff, plot_slope_params):
     ax2.set_ylabel('Frequency')
 
     plt.tight_layout()
-    fig.savefig('../DEM_error.pdf', format='PDF',dpi=150)
+    fig.savefig('DEM_error.pdf', format='PDF',dpi=150)
 
     plt.show()
     
