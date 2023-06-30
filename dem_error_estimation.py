@@ -55,7 +55,7 @@ def multiplot_slope_error(slope, out_path, option, diff, plot_slope_params):
     y = diff.flatten() # diff_flat - used to get mean/median error
 
     if(len(plot_slope_params) == 0):
-        max_slope = np.nanpercentile(x,98)
+        max_slope = np.nanpercentile(x,99.8)
         slope_steps = 1 + int(max_slope/10)
     else:
         max_slope = plot_slope_params[0]
@@ -104,6 +104,7 @@ def multiplot_slope_error(slope, out_path, option, diff, plot_slope_params):
     ax2.set_ylabel('Frequency')
 
     plt.tight_layout()
+    fig.savefig('../DEM_error.pdf', format='PDF',dpi=150)
 
     plt.show()
     

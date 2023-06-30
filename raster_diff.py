@@ -9,9 +9,9 @@ Usage: raster_diff.py --infile1=<path> --infile2=<path> --outfile=<path> [--inte
 
 Options:
 -h --help           Show this screen.
---infile1 PATH       Input image
---infile2 PATH       Input image
---outfile PATH      Output interferogram
+--infile1 PATH      Input image 1
+--infile2 PATH      Input image 2
+--outfile PATH      Output raster
 --intersec yes/no   if yes, only compute intersection [default:no]
 """
 
@@ -86,6 +86,7 @@ output_name2=None):
       driver = gdal.GetDriverByName("GTiff")
       if output_name1 is None:
           output_name1 = 'intersection1.tif'
+
       if output_name2 is None:
           output_name2 = 'intersection2.tif'
   else:
@@ -167,7 +168,7 @@ if (arguments["--intersec"] == None) or (arguments["--intersec"] == 'no'):
     raster_absolute_diff(ds1, ds2,output_file=arguments["--outfile"])
 
 elif arguments["--intersec"] == 'yes':
-    raster_intersection(ds1, ds2, output_name1=arguments["--outfile"])
+    raster_intersection(ds1, ds2, output_name2=arguments["--outfile"])
 
 else:
     print('intersec {} value not known. Nothing to be done'.format(arguments["--intersec"]))

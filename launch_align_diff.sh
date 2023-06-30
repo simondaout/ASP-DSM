@@ -83,15 +83,17 @@ echo raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=
 raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=diff-dsm.tif
 fi 
 
-if [[ ! -f $OUTPUT_DIR/dsm1_clipped.tif ]]; then
+if [[ ! -f $OUTPUT_DIR/dsm_clipped.tif ]]; then
 # compute slope on reference DEM
 echo raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=dsm1_clipped.tif
-raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=$OUTPUT_DIR/dsm1_clipped.tif
-echo gdaldem slope $OUTPUT_DIR/run-trans_reference-DEM.tif  $OUTPUT_DIR/dsm1_clipped_slope.tif  -of GTiff -b 1 -s 1.0
-gdaldem slope $OUTPUT_DIR/dsm1_clipped.tif  $OUTPUT_DIR/dsm1_clipped_slope.tif  -of GTiff -b 1 -s 1.0 
+raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --intersec=yes --outfile=$OUTPUT_DIR/dsm_clipped.tif
+mv intersection1.tif $OUTPUT_DIR/. 
+echo gdaldem slope $OUTPUT_DIR/dsm_clipped.tif  $OUTPUT_DIR/dsm_clipped_slope.tif  -of GTiff -b 1 -s 1.0 
+gdaldem slope $OUTPUT_DIR/dsm_clipped.tif  $OUTPUT_DIR/dsm_clipped_slope.tif  -of GTiff -b 1 -s 1.0 
 fi
 
 # compute error estimation
-dem_error_estimation.py --diff=$OUTPUT_DIR/diff-dsm.tif --slope=$OUTPUT_DIR/dsm1_clipped_slope.tif
+echo dem_error_estimation.py --diff=$OUTPUT_DIR/diff-dsm.tif --slope=$OUTPUT_DIR/dsm_clipped_slope.tif
+dem_error_estimation.py --diff=$OUTPUT_DIR/diff-dsm.tif --slope=$OUTPUT_DIR/dsm_clipped_slope.tif
 
 done
