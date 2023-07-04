@@ -239,7 +239,8 @@ cd $OUTPUT_DIR
 # BUNDLE ADJUST #
 ##################
 # perform bundle and map project only if map projected image does not exist
-if [[ ! -f $IMG2_MP ]]; then
+
+if [[ ! -d ba ]]; then
 
 if [[ $TRISTEREO = 'TRUE'  ]]; then
 bundle_adjust  $IMG1 $IMG2 $IMG3 $Lrpc $Rrpc $Mrpc -t $SESSION_TYPE --datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1
@@ -247,9 +248,13 @@ else
 bundle_adjust  $IMG1 $IMG2 $Lrpc $Rrpc -t $SESSION_TYPE --datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1
 fi
 
+fi
+
 # ###############
 # # Map Project #
 # ###############
+
+if [[ ! -f $IMG2_MP ]]; then
 
 if [[ $TRISTEREO = 'TRUE'  ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
