@@ -80,7 +80,7 @@ fi
 if [[ ! -f $OUTPUT_DIR/diff-dsm.tif ]]; then
 # clipping the ref DEM with the another DEM and compute diff
 echo raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=diff-dsm.tif
-raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=diff-dsm.tif
+raster_diff.py --infile1=$OUTPUT_DIR/run-trans_reference-DEM.tif --infile2=$ROOT/$DIR2/demPleiades/dem-DEM.tif --outfile=$OUTPUT_DIR/diff-dsm.tif
 fi 
 
 if [[ ! -f $OUTPUT_DIR/dsm_clipped.tif ]]; then
