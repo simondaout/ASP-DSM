@@ -108,7 +108,7 @@ else
 	fi	
 fi
 IMG1=$DIR1"/image1.tif"
-IMG1_MP=$DIR1"/img1_mapproj.tif"
+IMG1_MP=$OUTPUT_DIR"/MAPPROJ/img1_mapproj.tif"
 ORTHO1=$OUTPUT_DIR"/orthoimage_forward_$DATE1.tif"
 
 if [[ -d $DATA_DIR"/"$NAME2"/IMG_PHR1A_P_001/" ]]
@@ -136,7 +136,7 @@ else
 	fi	
 fi
 IMG2=$DIR2"/image2.tif"
-IMG2_MP=$DIR2"/img2_mapproj.tif"
+IMG2_MP=$OUTPUT_DIR"/MAPPROJ/img2_mapproj.tif"
 ORTHO2=$OUTPUT_DIR"/orthoimage_backward_$DATE2.tif"
 
 if [[ $TRISTEREO = 'TRUE'  ]]; then
@@ -166,7 +166,7 @@ else
     fi
 fi
 IMG3=$DIR3"/image3.tif"
-IMG3_MP=$DIR3"/img3_mapproj.tif"
+IMG3_MP=$OUTPUT_DIR"/MAPPROJ/img3_mapproj.tif"
 ORTHO3=$OUTPUT_DIR"/orthoimage_nadir_$DATE3.tif"
 
 fi
@@ -224,10 +224,15 @@ fi
 
 if [ $FORCE = 'TRUE' ]; then
 rm -rf $OUTPUT_DIR
+rm -rf $OUTPUT_DIR'/MAPPROJ'
 fi 
 
 if [[ ! -d $OUTPUT_DIR  ]]; then
 mkdir $OUTPUT_DIR
+fi
+
+if [[ ! -d $OUTPUT_DIR'/MAPPROJ'  ]]; then
+mkdir $OUTPUT_DIR'/MAPPROJ'
 fi
 
 # copy parameter file to new working dir
