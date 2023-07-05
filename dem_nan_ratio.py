@@ -45,15 +45,22 @@ def convert_to_binary(dem, nodata):
     
     return out
 
-def plot_binary(dem_binary):
-    plt.imshow(dem_binary)
+def plot_binary(dem_binary, input_file):
     
-    plt.title('Binary Mask')
+    fig, ax = plt.subplots()
+    
+    ax.imshow(dem_binary)
+    ax.set_title('Binary Mask')
+
+    filename = os.path.basename(input_file)
+    out_path = os.path.dirname(input_file)
+
+    fig.savefig(os.path.join(out_path, '{}_binary.pdf'.format(filename.split('.')[0])), format='PDF', dpi=150)
 
     plt.show()
 
 def calculate_nan_ratio(input_file, plot):
-    
+   
     dem_data = read_from_file(input_file)
     dem, ncol, nrow, nodata = dem_data[0], dem_data[1], dem_data[2], dem_data[3]
     dem_binary = convert_to_binary(dem, nodata)
@@ -66,7 +73,7 @@ def calculate_nan_ratio(input_file, plot):
     print('Ratio NaN to DEM pixel: {}'.format(count_results[0]/dem_binary.size))
     
     if(plot):
-        plot_binary(dem_binary)
+        plot_binary(dem_binary, input_file)
 
 
 ########
