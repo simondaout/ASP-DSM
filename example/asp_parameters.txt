@@ -25,6 +25,7 @@ CORR_T_S="1024" # --corr-tile-size # larger tile sizes produce better results bu
 SUBP_MODE="9" # --subpixel-mode
 SUBP_KERNEL="5 5" # --subpixel-kernel
 CORR_S_MODE="1" # --corr_seed_mode # 1: Use low-res disparity from stereo
+TIME="600" # A good value here could be 300 (seconds) or more if your terrain is expected to have large height variations.
 
 XCORR_TH="2" # --xcorr-threshold # double run time of SGM algo
 MIN_XCORR_LVL="1" # --min-xcorr-level
