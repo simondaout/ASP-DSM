@@ -74,7 +74,7 @@ fi
 if [[ ! -f $OUTPUT_DIR/run-trans_reference-DEM.tif ]]; then
 pc_align --max-displacement 100 --save-transformed-source-points --save-inv-transformed-reference-points $ROOT/$DIR1/demPleiades/dem-PC.tif $ROOT/$DIR2/demPleiades/dem-PC.tif -o $OUTPUT_DIR/run
 cd $OUTPUT_DIR
-point2dem --t_srs EPSG:$UTM  --tr $RES run-trans_reference.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA --threads $THREADS
+point2dem --t_srs EPSG:$UTM  --tr $RES run-trans_reference.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA --threads-multiprocess $THREADS
 fi
 
 if [[ ! -f $OUTPUT_DIR/diff-dsm.tif ]]; then
