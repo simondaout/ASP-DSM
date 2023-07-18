@@ -28,7 +28,10 @@ How to use it
 4) run orthorectification and stereo: launch_stereo_pleiades.sh  -n list_pairs.txt 
 5) run post-processing check: check_process.sh list_pair.txt
 6) run mosaic multispectral images: launch_MS_pleiades.sh -n list_pairs.txt
-7) run alignement of two DSM, difference, and error estimation: launch_align_diff.sh -n list_align.txt (see example/list_align.txt)
+7) run alignement of two DSM and difference computation for error estimation: launch_align_diff.sh -n list_align.txt (see example/list_align.txt)
+8) run error estimation: dem_error_estimation.py --diff=diff-6703445101-6703446101-6708224101-6708225101/diff-dsm.tiff --slope=diff-6703445101-6703446101-6708224101-6708225101/dsm-slope.tiff --name=Oman
+9) get nan pixel ratio with plot: dem_nan_ratio.py --data=6620390301-6620391301/dsm_denoised_filtered.tiff --p
+10) run corr_eval: dem_corr_eval.sh -n list_pairs.txt
 
 Developpers & Contact
 =============
