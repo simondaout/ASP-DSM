@@ -213,7 +213,7 @@ if [[ $TRISTEREO = 'TRUE'  ]]; then
 if [[ -f $IMG3 ]]; then
     echo "$IMG3 exists."
 else
-    gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".TIF"
+    gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".JP2" || gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".TIF" 
     gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR3"/vrt.tif" $IMG3
 fi
 fi
