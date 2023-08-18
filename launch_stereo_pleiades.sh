@@ -340,7 +340,7 @@ if [[ ! -f "demPleiades/dem-DEM.tif" ]]; then
 cd $OUTPUT_DIR/demPleiades
 point2dem --t_srs EPSG:$UTM --tr $RES dem-PC.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA 
 # convert in Int16 format & COMPRESS
-gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic dem-DEM.tif ../dsm_denoised.tiff
+gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dem-DEM.tif ../dsm_denoised.tiff
 # create hillshade
 gdaldem hillshade ../dsm_denoised.tiff ../hillshade_denoised.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
 fi
@@ -349,7 +349,7 @@ if [[ ! -f "demPleiades-filt/dem-DEM.tif" ]]; then
 cd $OUTPUT_DIR/demPleiades-filt
 point2dem --t_srs EPSG:$UTM --tr $RES dem-PC.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA 
 # convert in Int16 format & COMPRESS
-gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic dem-DEM.tif ../dsm_denoised_filtered.tiff
+gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dem-DEM.tif ../dsm_denoised_filtered.tiff
 # create hillshade
 gdaldem hillshade ../dsm_denoised_filtered.tiff ../hillshade_denoised_filtered.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
 fi
