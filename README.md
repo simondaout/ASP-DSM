@@ -1,6 +1,8 @@
 # ASP-playground
 Processing tool package written in bash, python, and Gdal programming language for DSM generation from stereo Pleiades images, and using the AMES stereo toolbox (https://stereopipeline.readthedocs.io/en/latest/).
 
+![Alt text](logo-pnts.jpg)
+
 To download the package
 =============
 ```git clone https://github.com/simondaout/ASP-DSM.git```
