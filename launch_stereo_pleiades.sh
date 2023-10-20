@@ -184,14 +184,13 @@ fi
 ##################
 
 # With some Airbus Pleiades data, each of the left and right images may arrive broken up into .TIF or .JP2 tiles, with names ending in R1C1.tif, R2C1.tif, etc.
-
-if [ $FORCE = 'TRUE' ]; then
-if [[ $TRISTEREO = 'TRUE'  ]]; then
-rm -f $IMG1 $IMG2 $IMG3 $IMG1_MP $IMG2_MP $IMG3_MP 
-else
-rm -f $IMG1 $IMG2 $IMG1_MP $IMG2_MP
-fi
-fi 
+#if [ $FORCE = 'TRUE' ]; then
+#if [[ $TRISTEREO = 'TRUE'  ]]; then
+#rm -f $IMG1 $IMG2 $IMG3 $IMG1_MP $IMG2_MP $IMG3_MP 
+#else
+#rm -f $IMG1 $IMG2 $IMG1_MP $IMG2_MP
+#fi
+#fi 
 
 if [[ -f $IMG1 ]]; then
 	echo "$IMG1 exists."
@@ -223,8 +222,8 @@ fi
 ##################
 
 if [ $FORCE = 'TRUE' ]; then
-rm -rf $OUTPUT_DIR
-rm -rf $OUTPUT_DIR'/MAPPROJ'
+rm -rf $OUTPUT_DIR/demPleiades
+rm -rf $OUTPUT_DIR/demPleiades-filt
 fi 
 
 if [[ ! -d $OUTPUT_DIR  ]]; then
@@ -287,6 +286,13 @@ gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubi
 # RUN STEREO #
 ##############
 
+session="--nodata-value $NO_DATA_S $DEM_UTM_FILE  --threads-multiprocess $THREADS" 
+stereo="--prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE" 
+#denoising="--rm-min-matches $RM_MIN_MATCHES --rm-half-kernel $RM_HALF_KERN --rm-threshold $RM_THRESHOLD --filter-mode $FILTER_MODE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS" 
+#denoising="--rm-quantile-percentile 0.9 --rm-quantile-multiple 1 --filter-mode 2 --rm-half-kernel 9 9 --rm-min-matches 50 --rm-threshold 3 " 
+#denoising="--rm-quantile-percentile 0.9 --rm-quantile-multiple -1 --filter-mode 2 --rm-half-kernel 9 9 --rm-min-matches 50 --rm-threshold 3 " 
+denoising="--rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --rm-min-matches $RM_MIN_MATCHES --rm-threshold $RM_THRESHOLD" 
+filtering="--median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE --texture-smooth-scale $TEXT_SMOOTH_SCALE" 
 
 cd $OUTPUT_DIR
 
@@ -294,28 +300,29 @@ if [[ $TRISTEREO = 'TRUE'  ]]; then
 
 if [[ ! -f "demPleiades-filt/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades-filt/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE  --threads-multiprocess $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --rm-min-matches $RM_MIN_MATCHES --rm-half-kernel $RM_HALF_KERN --rm-threshold $RM_THRESHOLD --filter-mode $FILTER_MODE --median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE --texture-smooth-scale $TEXT_SMOOTH_SCALE  
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades-filt/dem  $session $stereo $denoising $filtering 
 else 
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP  $Lrpc $Rrpc $Mrpc demPleiades-filt/dem $DEM_UTM_FILE  --bundle-adjust-prefix ba/run --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE  --threads-multiprocess $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS  --rm-min-matches $RM_MIN_MATCHES  --rm-half-kernel $RM_HALF_KERN  --rm-threshold $RM_THRESHOLD --filter-mode $FILTER_MODE --median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE --texture-smooth-scale $TEXT_SMOOTH_SCALE 
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades-filt/dem  $session $stereo $denoising $filtering --bundle-adjust-prefix ba/run
 fi 
 fi
 
 cd $OUTPUT_DIR
 if [[ ! -f "demPleiades/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP  $Lrpc $Rrpc $Mrpc demPleiades/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE  --threads-multiprocess $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --filter-mode 1 --rm-quantile-percentile 0.9 --rm-quantile-multiple 1   
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades/dem $session $stereo $denoising  
 else
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP  $IMG3_MP  $Lrpc $Rrpc $Mrpc  demPleiades/dem $DEM_UTM_FILE --bundle-adjust-prefix ba/run --nodata-value $NO_DATA_S --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE  --threads-multiprocess $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M  --filter-mode 1 --rm-quantile-percentile 0.9 --rm-quantile-multiple 1 
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP  $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades/dem  $session $stereo $denoising --bundle-adjust-prefix ba/run
 fi
 fi
 
 else
+
 
 if [[ ! -f "demPleiades-filt/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades-filt/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --rm-half-kernel $RM_HALF_KERN --rm-min-matches $RM_MIN_MATCHES --rm-threshold $RM_THRESHOLD --filter-mode $FILTER_MODE --median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE --texture-smooth-scale $TEXT_SMOOTH_SCALE  --threads-multiprocess $THREADS 
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades-filt/dem $session $stereo $denoising $filtering 
 else
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades-filt/dem $DEM_UTM_FILE  --bundle-adjust-prefix ba/run --nodata-value $NO_DATA_S --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS --rm-half-kernel $RM_HALF_KERN --rm-min-matches $RM_MIN_MATCHES  --rm-threshold $RM_THRESHOLD --filter-mode $FILTER_MODE   --median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE --texture-smooth-scale $TEXT_SMOOTH_SCALE  --threads-multiprocess $THREADS
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades-filt/dem $session $stereo $denoising $filtering --bundle-adjust-prefix ba/run
 fi
 fi
 
@@ -323,9 +330,9 @@ cd $OUTPUT_DIR
 
 if [[ ! -f "demPleiades/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades/dem $DEM_UTM_FILE --nodata-value $NO_DATA_S --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE  --threads-multiprocess $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M  --filter-mode 1 --rm-quantile-percentile 0.9 --rm-quantile-multiple 1
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M  $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades/dem  $session $stereo $denoising 
 else
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades/dem $DEM_UTM_FILE --bundle-adjust-prefix ba/run --nodata-value $NO_DATA_S --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE  --threads-multiprocess $THREADS --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE --prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --filter-mode 1 --rm-quantile-percentile 0.9 --rm-quantile-multiple 1
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc  demPleiades/dem $session $stereo $denoising  --bundle-adjust-prefix ba/run
 fi
 fi
 
@@ -344,6 +351,8 @@ gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cub
 # create hillshade
 gdaldem hillshade ../dsm_denoised.tiff ../hillshade_denoised.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
 fi
+
+cd $OUTPUT_DIR
 
 if [[ ! -f "demPleiades-filt/dem-DEM.tif" ]]; then
 cd $OUTPUT_DIR/demPleiades-filt
