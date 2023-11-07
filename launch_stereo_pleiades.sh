@@ -247,11 +247,21 @@ cd $OUTPUT_DIR
 if [[ ! -d ba ]]; then
 
 if [[ $TRISTEREO = 'TRUE'  ]]; then
-bundle_adjust  $IMG1 $IMG2 $IMG3 $Lrpc $Rrpc $Mrpc -t $SESSION_TYPE --datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1
+bundle_adjust  $IMG1 $IMG2 $IMG3 $Lrpc $Rrpc $Mrpc -t $SESSION_TYPE --datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2  --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1
 else
 bundle_adjust  $IMG1 $IMG2 $Lrpc $Rrpc -t $SESSION_TYPE --datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1
 fi
 
+fi
+
+# #########################
+# # check locations in GE #
+# #########################
+
+if [[ $TRISTEREO = 'TRUE'  ]]; then
+orbitviz -t $SESSION_TYPE $IMG1 $IMG2 $IMG3 $Lrpc $Rrpc $Mrpc  -o orbitviz_sat_pos_adjusted.kml --bundle-adjust-prefix ba/run
+else
+orbitviz -t $SESSION_TYPE $IMG1 $IMG2 $Lrpc $Rrpc -o orbitviz_sat_pos_adjusted.kml --bundle-adjust-prefix ba/run
 fi
 
 # ###############
@@ -266,7 +276,7 @@ mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG3 $Mrpc $IMG3
 else
 mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG3 $Mrpc $IMG3_MP --bundle-adjust-prefix ba/run --nodata-value 0
 fi
-gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG3_MP $ORTHO3 
+gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic $IMG3_MP $ORTHO3 
 fi
 
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
@@ -278,9 +288,9 @@ mapproject -t $SESSION_TYPE --t_srs EPSG:$UTM --tr $RESMP $DEM $IMG2 $Rrpc $IMG2
 fi
 fi
 
-# convert in Int16 format & COMPRESS
-gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG1_MP $ORTHO1 
-gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubic $IMG2_MP $ORTHO2 
+# convert in Float32 format & COMPRESS
+gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic $IMG1_MP $ORTHO1 
+gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic $IMG2_MP $ORTHO2 
 
 ##############
 # RUN STEREO #
@@ -288,10 +298,7 @@ gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot UInt16 -r cubi
 
 session="--nodata-value $NO_DATA_S $DEM_UTM_FILE  --threads-multiprocess $THREADS" 
 stereo="--prefilter-mode $PREF_MODE --prefilter-kernel-width $PREF_KER_M --corr-kernel $CORR_KERNEL --cost-mode $COST_MODE --stereo-algorithm $ST_ALG --corr-tile-size $CORR_T_S --subpixel-mode $SUBP_MODE --subpixel-kernel $SUBP_KERNEL --corr-seed-mode $CORR_S_MODE --xcorr-threshold $XCORR_TH --min-xcorr-level $MIN_XCORR_LVL --sgm-collar-size $SGM_C_SIZE" 
-#denoising="--rm-min-matches $RM_MIN_MATCHES --rm-half-kernel $RM_HALF_KERN --rm-threshold $RM_THRESHOLD --filter-mode $FILTER_MODE --rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --rm-cleanup-passes $RM_CLEAN_PASS" 
-#denoising="--rm-quantile-percentile 0.9 --rm-quantile-multiple 1 --filter-mode 2 --rm-half-kernel 9 9 --rm-min-matches 50 --rm-threshold 3 " 
-#denoising="--rm-quantile-percentile 0.9 --rm-quantile-multiple -1 --filter-mode 2 --rm-half-kernel 9 9 --rm-min-matches 50 --rm-threshold 3 " 
-denoising="--rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --rm-min-matches $RM_MIN_MATCHES --rm-threshold $RM_THRESHOLD" 
+denoising="--rm-quantile-percentile $RM_QUANT_PC --rm-quantile-multiple $RM_QUANT_MULT --filter-mode $FILTER_MODE --rm-half-kernel $RM_HALF_KERN --rm-min-matches $RM_MIN_MATCHES --rm-threshold $RM_THRESHOLD --max-mean-diff $MAX_DIFF" 
 filtering="--median-filter-size $MED_FILTER_SIZE --texture-smooth-size $TEXT_SMOOTH_SIZE --texture-smooth-scale $TEXT_SMOOTH_SCALE" 
 
 cd $OUTPUT_DIR
@@ -309,9 +316,9 @@ fi
 cd $OUTPUT_DIR
 if [[ ! -f "demPleiades/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades/dem $session $stereo $denoising  
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades/dem $session $stereo $denoising --median-filter-size 0  --texture-smooth-size 0 --texture-smooth-scale 0.13 
 else
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP  $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades/dem  $session $stereo $denoising --bundle-adjust-prefix ba/run
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP  $IMG3_MP $Lrpc $Rrpc $Mrpc demPleiades/dem  $session $stereo $denoising --bundle-adjust-prefix ba/run --median-filter-size 0  --texture-smooth-size 0 --texture-smooth-scale 0.13
 fi
 fi
 
@@ -330,9 +337,9 @@ cd $OUTPUT_DIR
 
 if [[ ! -f "demPleiades/dem-PC.tif" ]]; then
 if [[ ! -f "ba/run-image1__image2.match" ]]; then
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M  $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades/dem  $session $stereo $denoising 
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M  $IMG1_MP $IMG2_MP $Lrpc $Rrpc demPleiades/dem  $session $stereo $denoising --median-filter-size 0  --texture-smooth-size 0 --texture-smooth-scale 0.13
 else
-parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc  demPleiades/dem $session $stereo $denoising  --bundle-adjust-prefix ba/run
+parallel_stereo -t $SESSION_TYPE --alignment-method $A_M $IMG1_MP $IMG2_MP $Lrpc $Rrpc  demPleiades/dem $session $stereo $denoising  --bundle-adjust-prefix ba/run --median-filter-size 0  --texture-smooth-size 0 --texture-smooth-scale 0.13
 fi
 fi
 
@@ -346,7 +353,7 @@ fi
 if [[ ! -f "demPleiades/dem-DEM.tif" ]]; then
 cd $OUTPUT_DIR/demPleiades
 point2dem --t_srs EPSG:$UTM --tr $RES dem-PC.tif --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR  
-# convert in Int16 format & COMPRESS
+# convert in Float32 format & COMPRESS
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dem-DEM.tif ../dsm_denoised.tiff
 # create hillshade
 gdaldem hillshade ../dsm_denoised.tiff ../hillshade_denoised.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
@@ -357,7 +364,7 @@ cd $OUTPUT_DIR
 if [[ ! -f "demPleiades-filt/dem-DEM.tif" ]]; then
 cd $OUTPUT_DIR/demPleiades-filt
 point2dem --t_srs EPSG:$UTM --tr $RES dem-PC.tif --median-filter-params $MED_F_PAR --dem-hole-fill-len $DEM_HOLE_F_L --erode-length $ERODE_L --nodata-value $NO_DATA_DEM --tif-compress $TIF_COMPR --max-valid-triangulation-error $MAX_V_TRIANG_ERR --remove-outliers-param $RM_OUTL_PARA --remove-outliers  
-# convert in Int16 format & COMPRESS
+# convert in Float32 format & COMPRESS
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dem-DEM.tif ../dsm_denoised_filtered.tiff
 # create hillshade
 gdaldem hillshade ../dsm_denoised_filtered.tiff ../hillshade_denoised_filtered.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
