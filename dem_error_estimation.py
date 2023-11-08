@@ -46,6 +46,9 @@ def read_from_file(input_file):
 
     values_copy = np.copy(values)
     values_copy[values_copy <= error_val] = np.nan
+    
+    # errors should not be higher than few meters
+    values_copy[abs(values_copy) > 50. ] = np.nan
 
     return values_copy
 

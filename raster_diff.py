@@ -18,7 +18,7 @@ Options:
 import docopt
 import os
 from osgeo import gdal
-import numpy
+import numpy as np
 
 def raster_intersection(ds1, ds2, nodata1=None, nodata2=None, output_name1=None, 
 output_name2=None):
@@ -132,12 +132,12 @@ output_file=None):
   ds1_intersec, ds2_intersec = raster_intersection(ds1, ds2, nodata1, nodata2, 
   None, None)
   
-  ### Read bands with numpy to algebra
+  ### Read bands with np to algebra
   nodata = ds1_intersec.GetRasterBand(1).GetNoDataValue()
-  bandtar = numpy.array(ds1_intersec.GetRasterBand(1).ReadAsArray().astype(float))
-  fill_bandtar = numpy.where(bandtar == nodata)
-  bandref = numpy.array(ds2_intersec.GetRasterBand(1).ReadAsArray().astype(float))
-  fill_bandref = numpy.where(bandref == nodata)
+  bandtar = np.array(ds1_intersec.GetRasterBand(1).ReadAsArray().astype(float))
+  fill_bandtar = np.where(np.logical_or(bandtar == nodata,bandtar==-9999.0))
+  bandref = np.array(ds2_intersec.GetRasterBand(1).ReadAsArray().astype(float))
+  fill_bandref = np.where(np.logical_or(bandref == nodata,bandref==-9999.0))
   
   ### Get extent from ds1
   projection = ds1.GetProjectionRef()
@@ -165,10 +165,11 @@ ds1 = gdal.OpenEx(arguments["--infile1"], nOpenFlags=gdal.GA_ReadOnly)
 ds2 = gdal.OpenEx(arguments["--infile2"], nOpenFlags=gdal.GA_ReadOnly)
 
 if (arguments["--intersec"] == None) or (arguments["--intersec"] == 'no'):
-    raster_absolute_diff(ds1, ds2,output_file=arguments["--outfile"])
+    raster_intersection(ds1, ds2, nodata1=0, nodata2=0, output_name1='intersection1.tif',output_name2='intersection2.tif')
+    raster_absolute_diff(ds1, ds2, nodata1=0, nodata2=0, output_file=arguments["--outfile"])
 
 elif arguments["--intersec"] == 'yes':
-    raster_intersection(ds1, ds2, output_name2=arguments["--outfile"])
+    raster_intersection(ds1, ds2, nodata1=0, nodata2=0, output_name2=arguments["--outfile"])
 
 else:
     print('intersec {} value not known. Nothing to be done'.format(arguments["--intersec"]))
