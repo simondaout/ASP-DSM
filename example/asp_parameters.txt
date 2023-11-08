@@ -34,16 +34,16 @@ PREF_MODE=2 # --prefilter-mode # only used with BM algorithms
 PREF_KER_M=1.4 # --prefilter-kernel-width
 
 ### DENOISING ###
-RM_QUANT_MULT=-1 # --rm-quantile-multiple: default: -1 -> filter-mode=2, rm-min-matches=60, rm-threshold=3; 1: rm-quantile, no rm_min_match, no rm-threshold
+RM_QUANT_MULT=-1 # --rm-quantile-multiple: default: -1 -> filter-mode=2, rm-min-matches=60, rm-threshold=3; 1 -> use rm-quantile, no rm_min_match, no rm-threshold
 RM_CLEAN_PASS=1 # --rm-cleanup-passes
 RM_QUANT_PC=0.9 # --rm-quantile-percentile # default: discarded disparities > quantile*rm-quantile-multiple 
-FILTER_MODE=2 # --filter-mode (1: use mean difference, default: 2, use threshold & RM_MIN_MATCHES )
+FILTER_MODE=2 # --filter-mode (1: use mean difference, default: 2, use threshold & min_matches (higher filtering) )
 RM_HALF_KERN="9 9" # --rm-half-kernel: Low confidence pixel removal kernel (default: 5 5): increase to remove more points
 ## if FILTER_MODE=2
-RM_MIN_MATCHES=100 # --rm-min-matches:  Minimum number of pixels to be matched to keep sample (default: 60, for filter mode 2).
+RM_MIN_MATCHES=100 # --rm-min-matches:  For filter-mode=2, minimum number of pixels to be matched to keep sample (default: 60, for filter mode 2).
 RM_THRESHOLD=2  # --rm-threshold: Maximum distance (default: 3, for filter-mode=2) 
 ## if FILTER_MODE=1
-MAX_DIFF=2  # --max-mean-diff: Maximum difference (default: 3, for filter mode 1).
+MAX_DIFF=2  # --max-mean-diff: Maximum difference (default: 3, for filter-mode=1).
 
 #### FILTERING ####
 # median smoothing: produce smooth texture
