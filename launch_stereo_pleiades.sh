@@ -107,7 +107,7 @@ else
     echo ; exit
 	fi	
 fi
-cp $Lrpc $DIR1/RPC_$DATE1.XML
+cp $Lrpc $DIR1/$DATE1.XML
 IMG1=$DIR1"/forward_$DATE1.tif"
 IMG1_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_forward_$DATE1.tif"
 ORTHO1=$OUTPUT_DIR"/orthoimage_forward_$DATE1.tif"
@@ -136,7 +136,7 @@ else
     echo ; exit
 	fi	
 fi
-cp $Rrpc $DIR2/RPC_$DATE2.XML
+cp $Rrpc $DIR2/$DATE2.XML
 IMG2=$DIR1"/backward_$DATE2.tif"
 IMG2_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_backward_$DATE2.tif"
 ORTHO2=$OUTPUT_DIR"/orthoimage_backward_$DATE2.tif"
@@ -167,7 +167,7 @@ else
     echo ; exit
     fi
 fi
-cp $Mrpc $DIR3/RPC_$DATE3.XML
+cp $Mrpc $DIR3/$DATE3.XML
 IMG3=$DIR3"/nadir_$DATE3.tif"
 IMG3_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_nadir_$DATE3.tif"
 ORTHO3=$OUTPUT_DIR"/orthoimage_nadir_$DATE3.tif"
@@ -199,7 +199,11 @@ if [[ -f $IMG1 ]]; then
 	echo "$IMG1 exists."
 else
 	# These need to be mosaicked before being used
-	gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".JP2" || gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".TIF"
+	if [[ -f $DIR1"/"*"R"*"C"*".JP2" ]]; then
+	gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".JP2"
+	else
+	gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".TIF"
+	fi 
 	#actual self-contained image can be produced with:
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR1"/vrt.tif" $IMG1
 fi
@@ -207,7 +211,11 @@ fi
 if [[ -f $IMG2 ]]; then
     echo "$IMG2 exists."
 else
-	gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".JP2" || gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".TIF"
+    if [[ -f $DIR2"/"*"R"*"C"*".JP2" ]]; then	
+	gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".JP2"
+	else
+	gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".TIF"
+	fi	
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR2"/vrt.tif" $IMG2
 fi
 
@@ -215,8 +223,12 @@ if [[ $TRISTEREO = 'TRUE'  ]]; then
 if [[ -f $IMG3 ]]; then
     echo "$IMG3 exists."
 else
-    gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".JP2" || gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".TIF" 
-    gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR3"/vrt.tif" $IMG3
+	if [[ -f $DIR3"/"*"R"*"C"*".JP2" ]]; then
+    gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".JP2"
+	else 
+	gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".TIF" 
+    fi 
+	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR3"/vrt.tif" $IMG3
 fi
 fi
 
