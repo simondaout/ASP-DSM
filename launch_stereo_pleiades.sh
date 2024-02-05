@@ -107,8 +107,9 @@ else
     echo ; exit
 	fi	
 fi
-IMG1=$DIR1"/image1.tif"
-IMG1_MP=$OUTPUT_DIR"/MAPPROJ/img1_mapproj.tif"
+cp $Lrpc $DIR1/RPC_$DATE1.XML
+IMG1=$DIR1"/forward_$DATE1.tif"
+IMG1_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_forward_$DATE1.tif"
 ORTHO1=$OUTPUT_DIR"/orthoimage_forward_$DATE1.tif"
 
 if [[ -d $DATA_DIR"/"$NAME2"/IMG_PHR1A_P_001/" ]]
@@ -135,8 +136,9 @@ else
     echo ; exit
 	fi	
 fi
-IMG2=$DIR2"/image2.tif"
-IMG2_MP=$OUTPUT_DIR"/MAPPROJ/img2_mapproj.tif"
+cp $Rrpc $DIR2/RPC_$DATE2.XML
+IMG2=$DIR1"/backward_$DATE2.tif"
+IMG2_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_backward_$DATE2.tif"
 ORTHO2=$OUTPUT_DIR"/orthoimage_backward_$DATE2.tif"
 
 if [[ $TRISTEREO = 'TRUE'  ]]; then
@@ -165,8 +167,9 @@ else
     echo ; exit
     fi
 fi
-IMG3=$DIR3"/image3.tif"
-IMG3_MP=$OUTPUT_DIR"/MAPPROJ/img3_mapproj.tif"
+cp $Mrpc $DIR3/RPC_$DATE3.XML
+IMG3=$DIR3"/nadir_$DATE3.tif"
+IMG3_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_nadir_$DATE3.tif"
 ORTHO3=$OUTPUT_DIR"/orthoimage_nadir_$DATE3.tif"
 
 fi
@@ -356,7 +359,7 @@ point2dem --t_srs EPSG:$UTM --tr $RES dem-PC.tif --dem-hole-fill-len $DEM_HOLE_F
 # convert in Float32 format & COMPRESS
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dem-DEM.tif ../dsm_denoised.tiff
 # create hillshade
-gdaldem hillshade ../dsm_denoised.tiff ../hillshade_denoised.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
+#gdaldem hillshade ../dsm_denoised.tiff ../hillshade_denoised.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
 fi
 
 cd $OUTPUT_DIR
@@ -367,7 +370,7 @@ point2dem --t_srs EPSG:$UTM --tr $RES dem-PC.tif --median-filter-params $MED_F_P
 # convert in Float32 format & COMPRESS
 gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dem-DEM.tif ../dsm_denoised_filtered.tiff
 # create hillshade
-gdaldem hillshade ../dsm_denoised_filtered.tiff ../hillshade_denoised_filtered.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
+#gdaldem hillshade ../dsm_denoised_filtered.tiff ../hillshade_denoised_filtered.tiff  -of GTiff -b 1 -z 1.0 -s 1.0 -az 315.0 -alt 45.0 
 fi
 
 # exit pair
