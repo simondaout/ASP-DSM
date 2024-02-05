@@ -137,7 +137,7 @@ else
 	fi	
 fi
 cp $Rrpc $DIR2/$DATE2.XML
-IMG2=$DIR1"/backward_$DATE2.tif"
+IMG2=$DIR2"/backward_$DATE2.tif"
 IMG2_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_backward_$DATE2.tif"
 ORTHO2=$OUTPUT_DIR"/orthoimage_backward_$DATE2.tif"
 
@@ -180,7 +180,7 @@ fi
 
 if [[ ! -f $DEM_UTM_FILE ]]; then
 	gdalwarp -tr $GDAL_OUT_RES -t_srs EPSG:$UTM $DEM $DEM_UTM_FILE -r $RESAMP_M -overwrite
-fi 
+fi
 
 ##################
 # TILED IMAGES   #
