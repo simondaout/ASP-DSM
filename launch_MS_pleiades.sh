@@ -104,9 +104,9 @@ else
     echo ; exit
     fi
 fi
-IMG1=$DIR1"/image1_MS.tif"
-IMG1_MP=$DIR1"/img1_MS_mapproj.tif"
-ORTHO1=$OUTPUT_DIR"/orthoimage_MS_$DATE1.tif"
+IMG1=$DIR1"/MS_"$DATE1".tif"
+IMG1_MP=$DIR1"/mapproj_MS_$DATE1.tif"
+ORTHO1=$OUTPUT_DIR"/orthoimage_forward_MS_$DATE1.tif"
 
 if [[ -d $DATA_DIR"/"$NAME2"/IMG_PHR1A_MS_002/" ]]
 then
@@ -132,9 +132,9 @@ else
     echo ; exit
     fi
 fi
-IMG2=$DIR2"/image2_MS.tif"
-IMG2_MP=$DIR2"/img2_MS_mapproj.tif"
-ORTHO2=$OUTPUT_DIR"/orthoimage_MS_$DATE2.tif"
+IMG2=$DIR2"/MS_$DATE2.tif"
+IMG2_MP=$DIR2"/MS_mapproj_$DATE2.tif"
+ORTHO2=$OUTPUT_DIR"/orthoimage_MS_backward_$DATE2.tif"
 
 if [[ $TRISTEREO = 'TRUE'  ]]; then
 
@@ -162,8 +162,8 @@ else
     echo ; exit
     fi
 fi
-IMG3=$DIR3"/image3_MS.tif"
-IMG3_MP=$DIR3"/img3_MS_mapproj.tif"
+IMG3=$DIR3"/MS_$DATE3.tif"
+IMG3_MP=$DIR3"/MS_mapproj_$DATE3.tif"
 ORTHO3=$OUTPUT_DIR"/orthoimage_MS_nadir_$DATE3.tif"
 
 fi
