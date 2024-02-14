@@ -1,0 +1,65 @@
+#####################
+# GENERAL VARIABLES #
+#####################
+
+DEM_FILE=$PWD"/cop_dem30_40_41_11_12.tif"
+DATA_DIR="/data/ARCHIVES/afar/"
+UTM="32637"
+RES=2 # higher resolution doesnot produce better results
+RESMP=1
+THREADS=5
+GDAL_OUT_RES="30 30" # -tr set file output resolution
+RESAMP_M="cubic" # resample method
+
+###################
+# STEREO SETTINGS #
+###################
+
+### STERERO CONFIG ###
+SESSION_TYPE="pleiades" # -t  # pleiades option does not produce better results
+A_M="none" # --alignment-method
+NO_DATA_S=0 # --nodata_value stereo
+CORR_KERNEL="9 9" # --corr_kernel # MGM algo allows for small correlation windows and is faster than block-matching
+COST_MODE=3 # --cost-mode # use 3 with MGM
+ST_ALG=3 # --stereo_algorithm
+CORR_T_S=1024 # --corr-tile-size # larger tile sizes produce better results but consume more memory.
+SUBP_MODE=2 # --subpixel-mode use 9 for high resolution/small objets or 2 for long-wavelength
+SUBP_KERNEL="15 15" # --subpixel-kernel
+CORR_S_MODE=1 # --corr_seed_mode # 1: Use low-res disparity from stereo
+XCORR_TH=2 # --xcorr-threshold # double run time of SGM algo
+MIN_XCORR_LVL=1 # --min-xcorr-level
+SGM_C_SIZE=256 # --sgm-collar-size #Extend SGM calculation to this distance to increase accuracy at tile borders
+# pre-filtereing only used with asp-bm algo 
+PREF_MODE=2 # --prefilter-mode # only used with BM algorithms
+PREF_KER_M=1.4 # --prefilter-kernel-width
+
+### DENOISING ###
+RM_QUANT_MULT=-1 # --rm-quantile-multiple: default: -1 -> filter-mode=2, rm-min-matches=60, rm-threshold=3; 1 -> use rm-quantile, no rm_min_match, no rm-threshold
+RM_CLEAN_PASS=1 # --rm-cleanup-passes
+RM_QUANT_PC=0.9 # --rm-quantile-percentile # default: discarded disparities > quantile*rm-quantile-multiple
+FILTER_MODE=1 #--filter-mode (1: use mean difference, default: 2, use threshold & min_matches (higher filtering) )
+RM_HALF_KERN="5 5" # --rm-half-kernel: Low confidence pixel removal kernel (default: 5 5).  A 5 × 5 half kernel would result in an 11 × 11 kernel with 121 pixels in it. 
+## if FILTER_MODE=2
+RM_MIN_MATCHES=50 # --rm-min-matches:  Minimum percentage of pixels to be matched to keep sample (default: 60, for filter mode 2).
+RM_THRESHOLD=1  # --rm-threshold: Maximum distance (default: 3, for filter-mode=2) 
+## if FILTER_MODE=1
+MAX_DIFF=1  # --max-mean-diff: Maximum difference (default: 3, for filter mode 1).
+
+#### FILTERING ####
+# median smoothing: produce smooth texture
+MED_FILTER_SIZE=3 # --median-filter-size: Filter subpixel results with a median # default: 0  (3 might be a good choice)
+TEXT_SMOOTH_SIZE=5 # --texture-smooth-size: Kernel size to perform texture aware disparity smoothing # default: 0 (3 might be a good choice)
+TEXT_SMOOTH_SCALE=0.13 #--texture-smooth-scale # default: 0.15 (0.14 might be a good choice, Larger is more smoothing) 
+
+######################
+# POINT2DEM SETTINGS #
+######################
+
+MED_F_PAR="11 20." # --median-filter-params: remove median(H(points)) > threshold  (=window_size threshold, default: 11, 40)
+DEM_HOLE_F_L=200 # --dem-hole-fill-len
+ERODE_L=1 # --erode-length
+NO_DATA_DEM=0 # --nodata_value dem
+TIF_COMPR="Deflate" # --tif-compress
+MAX_V_TRIANG_ERR=.5 # --max-valid-triangulation-error # 1 might be better
+RM_OUTL_PARA="70 3" # --remove-outliers-param (=pct factor, default: pct=75.0, factor=3.0) 
+
