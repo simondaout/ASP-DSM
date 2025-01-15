@@ -187,22 +187,23 @@ fi
 ##################
 
 # With some Airbus Pleiades data, each of the left and right images may arrive broken up into .TIF or .JP2 tiles, with names ending in R1C1.tif, R2C1.tif, etc.
-#if [ $FORCE = 'TRUE' ]; then
-#if [[ $TRISTEREO = 'TRUE'  ]]; then
-#rm -f $IMG1 $IMG2 $IMG3 $IMG1_MP $IMG2_MP $IMG3_MP 
-#else
-#rm -f $IMG1 $IMG2 $IMG1_MP $IMG2_MP
-#fi
-#fi 
+if [ $FORCE = 'TRUE' ]; then
+if [[ $TRISTEREO = 'TRUE'  ]]; then
+rm -f $IMG1 $IMG2 $IMG3 $IMG1_MP $IMG2_MP $IMG3_MP 
+else
+rm -f $IMG1 $IMG2 $IMG1_MP $IMG2_MP
+fi
+fi 
 
 if [[ -f $IMG1 ]]; then
 	echo "$IMG1 exists."
 else
 	# These need to be mosaicked before being used
-	if [[ -f $DIR1"/"*"R"*"C"*".JP2" ]]; then
-	gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".JP2"
+	echo $DIR1 
+	if ls $DIR1/*R*C*.JP2 1> /dev/null 2>&1; then	
+		gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".JP2"
 	else
-	gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".TIF"
+		gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".TIF"
 	fi 
 	#actual self-contained image can be produced with:
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR1"/vrt.tif" $IMG1
@@ -211,10 +212,10 @@ fi
 if [[ -f $IMG2 ]]; then
     echo "$IMG2 exists."
 else
-    if [[ -f $DIR2"/"*"R"*"C"*".JP2" ]]; then	
-	gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".JP2"
+	if ls $DIR2/*R*C*.JP2 1> /dev/null 2>&1; then
+		gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".JP2"
 	else
-	gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".TIF"
+		gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".TIF"
 	fi	
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR2"/vrt.tif" $IMG2
 fi
