@@ -10,6 +10,8 @@ RESMP="1"
 THREADS="20"
 GDAL_OUT_RES="30 30" # -tr set file output resolution
 RESAMP_M="cubic" # resample method
+MS=true # Multi Spectral orthorectified images
+EE=true # Error estimation
 
 ###################
 # STEREO SETTINGS #
