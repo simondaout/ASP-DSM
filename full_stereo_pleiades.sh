@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # help
 Help()
 {
@@ -80,19 +82,19 @@ do
     fi
 	cd $ROOT
 
-	. ./set_dirs.sh
+	. "$SCRIPT_DIR/set_dirs.sh"
 
 	###########
 	# REF DEM #
 	###########
 
-	. ./ref_dem.sh
+	. "$SCRIPT_DIR/ref_dem.sh"
 
 	##################
 	# TILED IMAGES   #
 	##################
 
-	. ./tiled_images.sh
+	. "$SCRIPT_DIR/tiled_images.sh"
 
 	##################
 	# CHANGE DIR     #
@@ -123,7 +125,7 @@ do
 
 	if [[ ! -d ba ]]; then
 
-	. ./bundle_adjust.sh
+	. "$SCRIPT_DIR/bundle_adjust.sh"
 
 	fi
 
@@ -131,13 +133,13 @@ do
 	# # check locations in GE #
 	# #########################
 
-	. ./orbit_viz.sh
+	. "$SCRIPT_DIR/orbit_viz.sh"
 
 	# ###############
 	# # Map Project #
 	# ###############
 
-	. ./map_project.sh
+	. "$SCRIPT_DIR/map_project.sh"
 
 	##############
 	# RUN STEREO #
@@ -150,13 +152,13 @@ do
 
 	cd $OUTPUT_DIR
 
-	. ./run_stereo.sh
+	. "$SCRIPT_DIR/run_stereo.sh"
 
 	#############
 	# POINT2DEM #
 	#############
 
-	. ./point2dem.sh
+	. "$SCRIPT_DIR/point2dem.sh"
 
 	# exit pair
 	cd $ROOT
@@ -165,4 +167,3 @@ do
 done
 
 exit
-
