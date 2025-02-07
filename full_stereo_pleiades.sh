@@ -129,15 +129,15 @@ do
 
 	fi
 
-	# #########################
-	# # check locations in GE #
-	# #########################
+	##########################
+	## check locations in GE #
+	##########################
 
 	. "$SCRIPT_DIR/orbit_viz.sh"
 
-	# ###############
-	# # Map Project #
-	# ###############
+	################
+	## Map Project #
+	################
 
 	. "$SCRIPT_DIR/map_project.sh"
 
