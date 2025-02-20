@@ -1,7 +1,7 @@
 # handle all the asp dsm pleiades workflow in a modulable way
 
 import numpy as np
-from dsm_toml_file import DsmToml
+from dsm_toml_file import DsmToml, DsmLock
 from dsm_dim_parse import PleiadesDIM
 
 from osgeo import gdal
@@ -10,102 +10,150 @@ import os
 import sys
 import subprocess
 
+def sh(cmd: str):
+    """
+    Launch a shell command
+    """
+    subprocess.call(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT, env=os.environ)
 
-def setup_folders():
-    # construct the folder structure
-    not_implemented()
+class DsmRun:
+    def __init__(self, toml):
+        self.toml_path = toml
+        self.toml = DsmToml(toml)
+        self.lock = None
+        self.output = None
+        
+        # ante stereo
+        self.available_as = {"dem": False, "ba": False, "orbit": False, "mapproj": False}
+        # post stereo
+        self.available_ps = {"stereo": False, "rastering": False, "merge": False, "ms": False, "error": False}
+        
+        self.dims = []
+        self.tifs = []
+        self.bboxs = []
+        self.global_bbox = []
+        self.dem = None
+        self.dem_utm = None
 
-def check_folder_exist():
-    not_implemented()
+    def run(self):
+        self._workspace_ready()
+        not_implemented()
 
-def prepare_dem():
-    not_implemented()
+    def _setup_folders(self):
+        output_folder = self.toml.output.path
+        self.output = output_folder
 
-def check_dem():
-    not_implemented()
+        if not os.path.isdir(output_folder):
+            os.mkdir(output_folder)
+        lock_path = os.path.join(output_folder, "asp_dsm.lock")
 
-def bundle_adjust():
-    not_implemented()
-
-def check_bundle_adjust():
-    not_implemented()
-
-def orbitviz():
-    not_implemented()
-
-def check_orbit_viz():
-    not_implemented()
-
-def map_project():
-    not_implemented()
-
-def check_map_project():
-    not_implemented()
-
-def stereo():
-    not_implemented()
-
-def check_stereo():
-    not_implemented()
-
-def rastering():
-    not_implemented()
-
-def check_rastering():
-    not_implemented()
-
-def merge():
-    not_implemented()
-
-def check_merge():
-    not_implemented()
-
-def ms_ortho():
-    not_implemented()
-
-def check_ms_ortho():
-    not_implemented()
-
-def error_estimation():
-    not_implemented()
-
-def check_error_estimation():
-    not_implemented()
-
-
-def dsm_run(toml_path):
-    toml = DsmToml(toml_path)
-    sc = toml.step_control
-
-    if not check_folder_exist:
-        setup_folders()
-
-    if not check_dem() and sc.dem:
-        prepare_dem()
+        if not os.path.isfile(lock_path):
+            self.lock = DsmLock().new(self.toml, lock_path)
+        else:
+            self.lock = DsmLock().open(lock_path)
+            avail = self.lock.check_commons()
+            self.available_as = {"dem": avail[0], "ba": avail[1], "orbit": avail[2], "mapproj": avail[3]}
+        
+        for k in range(len(self.toml.sources)):
+            os.mkdir(output_folder + "/frag" + str(k + 1))
     
-    if not check_bundle_adjust() and sc.bundle_asjust:
-        bundle_adjust()
+    def _workspace_ready(self):
+        """
+        Workspace is ready when:
 
-    if not check_orbit_viz() and sc.orbit_viz:
-        orbitviz()
+        * raw img is in one .TIF
+        * dem is acquired
+        * img is bundle adjusted
+        * orbit kml
+        * img is mapprojected
+        """
+        # Setup the working folder
+        self._setup_folders()
+        sh("cd {}".format(self.toml.output.path))
+        sc = self.toml.step_control
 
-    if not check_map_project() and sc.map_project:
-        map_project()
+        # Check if raw data is ready, i.e single .TIF
+        self._raw_data_ready()
 
-    if not check_stereo() and sc.stereo:
-        stereo()
+        # Prepare the DEM
+        if not self.available_as["dem"] or sc.dem:
+            self._compute_dem()
+        else: 
+            self.dem = self.toml.run.dem_path
+        self.dem_utm = os.path.splitext(self.dem)[0] + "_utm.tif"
+        sh("gdalwarp -tr {} -t_srs {} {} {} -r {}".format(self.toml.output.gdal_out_res,
+                                                           "EPSG:" + str(self.toml.output.utm),
+                                                           self.dem,
+                                                           self.dem_utm,
+                                                           self.toml.output.resamp_m))
 
-    if not check_rastering() and sc.rastering:
-        rastering()
+        for s in range(len(self.toml.sources)):
+            frag_folder = os.join(self.output, "frag" + str(s))
+            if not os.path.isdir(frag_folder):
+                mkdir()
+            # Bundle adjust the images
+            if not self.available_as["ba"] or sc.bundle_asjust:
+                self._bundle_adjust(s)
 
-    if not check_merge() and sc.merge:
-        merge()
+            # Create orbit kml visualization
+            if not self.available_as["orbit"] or sc.orbit_viz:
+                self._orbit_viz(s)
+                
+            # Mapproject the images
+            if not self.available_as["mapproj"] or sc.map_project:
+                self._map_project(s)
 
-    if not check_ms_ortho() and sc.ms_orthorectified:
-        ms_ortho()
+    def _raw_data_ready(self):
+        src = self.toml.sources
+
+        for s in src:
+            if not len(s) == 2 and not len(s) == 3:
+                raise ValueError("Invalid number of images for stereo ({}). Must be 2 or 3.".format(len(s)))
+            dims = []
+            for img_p in s:
+                dim = PleiadesDIM(img_p)
+                dim.prepare()
+                dims.append(dim)
+            self.dims.append(dims)
+            self.tifs.append([k.img_tif for k in dims])
+            self.bboxs.append([k.bbox for k in dims])
+        
+        self.bboxs = np.array(self.bboxs)
+        self.global_bbox = [np.min(self.bboxs[:, 0]), np.max(self.bboxs[:, 1]), np.min(self.bboxs[:, 2]), np.max(self.bboxs[:, 3])]
+        # 2% padding for security
+        bbox_width = self.global_bbox[1] - self.global_bbox[0]
+        bbox_height = self.global_bbox[3] - self.global_bbox[2]
+        self.global_bbox = [self.global_bbox[0] - 0.02 * bbox_width, 
+                            self.global_bbox[1] + 0.02 * bbox_width,
+                            self.global_bbox[2] - 0.02 * bbox_height,
+                            self.global_bbox[3] + 0.02 * bbox_height]
+
     
-    if not check_error_estimation() and sc.error_estimation:
-        error_estimation()
+    def _compute_dem(self):
+        long1, long2, lat1, lat2 = self.global_bbox[0], self.global_bbox[1], self.global_bbox[2], self.global_bbox[3]
+        dst = os.path.join(self.toml.output.path, "cop_dem30_{}_{}_{}_{}".format(int(long1), int(long2), int(lat1), int(lat2)))
+        sh("my_getDemFile.py -s COP_DEM --bbox={},{},{},{} -c /data/ARCHIVES/DEM/COP-DEM_GLO-30-DTED/DEM".format(long1, long2, lat1, lat2))
+        sh("gdal_translate -of Gtiff {} {}".format(dst + ".dem", dst + ".tif"))
+        self.dem = os.path.join(self.toml.output.path, dst + ".tif")
+
+    def _bundle_adjust(self, source_nb):
+        source = self.toml.sources[source_nb]
+
+        src = source[0] + ' ' + source[1]
+        dims = self.dims[source_nb][0].dim_path + ' ' + self.dims[source_nb][1].dim_path
+        if len(source) == 3:
+            src = src + ' ' + source[2]
+            dims = dims + ' ' + self.dims[source_nb][2].dim_path
+
+        ba_params = "--datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1"
+
+        sh("bundle_adjust {} {} -t {} {}".format(src, dims, self.toml.stereo.session_type, ba_params))
+
+    def _orbit_viz(self, source_nb):
+        pass
+
+    def _map_project(self, source_nb):
+        pass
 
 
 def cli():

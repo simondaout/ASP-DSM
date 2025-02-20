@@ -1,7 +1,7 @@
 # ASP - DSM RUN CONFIG FILE (v0.0.1)
 
 [run]
-name = "Bhote DSM"
+name = "Name DSM"
 info = "more informations about the run"
 dem_path = "" # if no dem, get it from bbox
 threads = 20
@@ -23,15 +23,15 @@ paths = ["", ""]
 [step_control]
 # if item false or not indicated, will recompute only if missing
 # otherwise overwrite existing files
-dem = true
-bundle_adjust = true
-orbit_viz = true
-map_project = true
-stereo = true
-rastering = true
-merge = true
-ms_orthorectified = true
-error_estimation = true
+dem = false
+bundle_adjust = false
+orbit_viz = false
+map_project = false
+stereo = false
+rastering = false
+merge = false
+ms_orthorectified = false
+error_estimation = false
 
 [stereo]
 session_type = "pleiades"

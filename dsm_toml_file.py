@@ -113,5 +113,34 @@ class Rastering:
         self.remove_outlier_param = dic.get("remove_outlier_param", [75.0, 3.0])
 
 
+class DsmLock:
+    def __init__(self):
+        self.path = None
+        self.lock = None
+
+    def new(self, toml: DsmToml, lock_path):
+        self.path = lock_path
+        pass
+        return self
+
+    def open(self, lock_path):
+        self.path = lock_path
+        self.lock = parse_toml(lock_path)
+        return self
+
+    def check_commons(self):
+        """
+        Check if there is an entry for the given attribute in the lock file
+        """
+        dem = self.lock["lock"].get("dem", "")
+        bundle_adjust = self.lock["lock"].get("bundle_adjust", "")
+        orbit_viz = self.lock["lock"].get("orbit_viz", "")
+        mapproj = self.lock["lock"].get("mapproj", "")
+        return [len(k) != 0 for k in [dem, bundle_adjust, orbit_viz, mapproj]]
+
+class DsmParamLock:
+    def __init__(self):
+        pass
+
 if __name__ == "__main__":
     pass

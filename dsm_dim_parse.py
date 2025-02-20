@@ -87,6 +87,9 @@ class PleiadesDIM:
 
         /!\ Write in Raw data
         """
+        # TODO test gdal arguments !!!!!!
+        not_implemented()
+        
         vrt = os.path.join(self.folder, "vrt.tif")
         dst = self.img_tif
         if len(self.img_paths) == 0 and os.path.splitext(self.img_paths[0])[1] != ".TIF":

@@ -1,0 +1,12 @@
+[lock]
+name = "Name DSM"
+info = "more informations about the run"
+dem = ""
+bundle_adjust = ""
+orbit_viz = ""
+mapproj = ""
+
+[[source]]
+paths = ["", "", ""]
+
+[[source]]
