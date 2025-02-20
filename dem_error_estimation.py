@@ -26,7 +26,10 @@ from matplotlib import pyplot as plt
 import pandas as pd
 from pathlib import Path
 from math import *
-import docopt
+try:
+    import docopt
+except:
+    import contrib.python.docopt
 
 #############
 # FUNCTIONS #
@@ -51,6 +54,7 @@ def read_from_file(input_file):
     values_copy[abs(values_copy) > 50. ] = np.nan
 
     return values_copy
+
 
 def multiplot_slope_error(slope, out_path, option, diff, plot_slope_params):
 
@@ -129,34 +133,31 @@ def prepare_and_plot_data(slope_file, diff_file, option, plot_slope_params):
 ########
 # MAIN #
 ########
+if __name__ == "__main__":
 
-arguments = docopt.docopt(__doc__)
+    arguments = docopt.docopt(__doc__)
 
-# all input files should be in one directory
-diff_file = arguments['--diff']
-slope_file = arguments['--slope']
+    # all input files should be in one directory
+    diff_file = arguments['--diff']
+    slope_file = arguments['--slope']
 
-# naming for final plot
-option = arguments['--name']
+    # naming for final plot
+    option = arguments['--name']
 
-# destination path will be path of diff file
-dest_path = os.path.dirname(diff_file)
+    # destination path will be path of diff file
+    dest_path = os.path.dirname(diff_file)
 
-# define plot parameters 
-if(arguments['--plot_slope']):
-    plot_slope = arguments['--plot_slope'].split(',')
-    plot_slope_params = (int(plot_slope[0]), int(plot_slope[1]))
-else:
-    plot_slope_params = ()
-
-
-#############
-# PLOT DATA #
-#############
-
-# SINGLE PLOT #
-prepare_and_plot_data(slope_file, diff_file, option, plot_slope_params)
+    # define plot parameters 
+    if(arguments['--plot_slope']):
+        plot_slope = arguments['--plot_slope'].split(',')
+        plot_slope_params = (int(plot_slope[0]), int(plot_slope[1]))
+    else:
+        plot_slope_params = ()
 
 
+    #############
+    # PLOT DATA #
+    #############
 
-
+    # SINGLE PLOT #
+    prepare_and_plot_data(slope_file, diff_file, option, plot_slope_params)

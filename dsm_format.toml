@@ -1,0 +1,79 @@
+# ASP - DSM RUN CONFIG FILE (v0.0.1)
+
+[run]
+name = "Bhote DSM"
+info = "more informations about the run"
+dem_path = "" # if no dem, get it from bbox
+threads = 20
+
+[output]
+path = ""
+utm = 32645
+res = 2
+resmp = 1
+gdal_out_res = [30, 30]
+resamp_m = "cubic"
+
+[[source]]
+paths = ["", "", ""]
+
+[[source]]
+paths = ["", ""]
+
+[step_control]
+# if item false or not indicated, will recompute only if missing
+# otherwise overwrite existing files
+dem = true
+bundle_adjust = true
+orbit_viz = true
+map_project = true
+stereo = true
+rastering = true
+merge = true
+ms_orthorectified = true
+error_estimation = true
+
+[stereo]
+session_type = "pleiades"
+st_alg = 3
+cost_mode = 4
+subp_mode = 11
+corr_kernel = [7, 7]
+subp_kernel = [5, 5]
+
+[stereo.advance]
+aligment_method = "none"
+nodata_value_stereo = 0
+corr_tile_size = 1024
+corr_seed_mode = 1
+xcorr_threshold = 2
+min_xcorr_lvl = 1
+sgm_collar_size = 256
+prefilter_mode = 2
+prefilter_kernel_width = 1.4
+
+[stereo.denoising]
+rm_quantile_multiple = -1
+rm_clean_pass = 1
+rm_quant_pc = 0.95
+filter_mode = 2
+rm_half_kernel = [7, 7]
+rm_min_matches = 50
+rm_threshold = 4
+max_mean_diff = 4
+
+[stereo.filtering]
+# if filtering is not indicated or do is false, will perform stereo withour post filtering
+do = true
+median_filter_size = 3
+texture_smooth_size = 3
+texture_smooth_scale = 0.13
+
+[rastering]
+median_filter_params = [9, 50]
+dem_hole_fill_len = 200
+erode_length = 0
+nodata_value_dem = 0
+tif_compress = "Deflate"
+max_valid_triangulation_error = 4.0
+remove_outlier_param = [75.0, 3.0]
