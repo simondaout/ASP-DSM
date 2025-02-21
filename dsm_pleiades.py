@@ -88,9 +88,9 @@ class DsmRun:
                                                            self.toml.output.resamp_m))
 
         for s in range(len(self.toml.sources)):
-            frag_folder = os.join(self.output, "frag" + str(s))
-            if not os.path.isdir(frag_folder):
-                mkdir()
+            frag_folder = os.join(self.output, "frag" + str(s + 1))
+            sh("cd {}".format(frag_folder))
+            
             # Bundle adjust the images
             if not self.available_as["ba"] or sc.bundle_asjust:
                 self._bundle_adjust(s)
@@ -135,8 +135,8 @@ class DsmRun:
         sh("my_getDemFile.py -s COP_DEM --bbox={},{},{},{} -c /data/ARCHIVES/DEM/COP-DEM_GLO-30-DTED/DEM".format(long1, long2, lat1, lat2))
         sh("gdal_translate -of Gtiff {} {}".format(dst + ".dem", dst + ".tif"))
         self.dem = os.path.join(self.toml.output.path, dst + ".tif")
-
-    def _bundle_adjust(self, source_nb):
+    
+    def _get_src_dim_from_nb(self, source_nb):
         source = self.toml.sources[source_nb]
 
         src = source[0] + ' ' + source[1]
@@ -144,16 +144,41 @@ class DsmRun:
         if len(source) == 3:
             src = src + ' ' + source[2]
             dims = dims + ' ' + self.dims[source_nb][2].dim_path
+        return src, dims
+
+    def _bundle_adjust(self, source_nb):
+        src, dims = self._get_src_dim_from_nb(source_nb)
 
         ba_params = "--datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1"
 
         sh("bundle_adjust {} {} -t {} {}".format(src, dims, self.toml.stereo.session_type, ba_params))
 
     def _orbit_viz(self, source_nb):
-        pass
+        src, dims = self._get_src_dim_from_nb(source_nb)
+
+        sh("orbitviz -t {} {} {} -o orbitviz_sat_pos_adjusted.kml --bundle-adjust-prefix ba/run".format(
+            self.toml.stereo.session_type,
+            src,
+            dims
+        ))
 
     def _map_project(self, source_nb):
-        pass
+        src, dims = self._get_src_dim_from_nb(source_nb)
+        src, dims = src.split(' '), dims.split(' ')
+
+        for k in range(len(src)):
+            sh("mapproject -t {} --t_srs EPSG:{} --tr {} {} {} {} {} --bundle-adjust-prefix ba/run --nodata-value 0".format(
+                self.toml.stereo.session_type,
+                self.toml.output.utm,
+                self.toml.output.resmp,
+                self.dem_utm,
+                src[k],
+                dims[k],
+                os.path.join(self.output, "mapproj", "mp_" + os.path.basename(src[k]))
+            ))
+
+    def _run_process_stereo(self):
+        not_implemented()
 
 
 def cli():

@@ -2,6 +2,15 @@ import numpy as np
 from osgeo import gdal
 import os
 import xml.etree.ElementTree as ET
+import subprocess
+import sys
+
+
+def sh(cmd: str):
+    """
+    Launch a shell command
+    """
+    subprocess.call(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT, env=os.environ)
 
 
 class PleiadesDIM:
@@ -87,15 +96,21 @@ class PleiadesDIM:
 
         /!\ Write in Raw data
         """
-        # TODO test gdal arguments !!!!!!
-        not_implemented()
-        
         vrt = os.path.join(self.folder, "vrt.tif")
         dst = self.img_tif
         if len(self.img_paths) == 0 and os.path.splitext(self.img_paths[0])[1] != ".TIF":
             dst = os.path.splitext(self.img_paths[0])[0] + ".TIF"
-        gdal.BuildVRT(vrt, self.img_paths)
-        gdal.Translate(dst, vrt, options=["TILED=YES", "BLOCKXSIZE=256", "BLOCKYSIZE=256", "BIGTIFF=IF_SAFER"])
+
+        sh("gdalbuildvrt {} {}".format(
+            vrt,
+            " ".join(self.img_paths)
+        ))
+
+        sh("gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER {} {}".format(
+            vrt,
+            dst
+        ))
+
         os.remove(vrt)
     
     def _check_already_prepared(self):
