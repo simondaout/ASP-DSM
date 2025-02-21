@@ -1,4 +1,17 @@
-# handle all the asp dsm pleiades workflow in a modulable way
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+dsm_pleiades.py
+_______________
+Handle DSM production from Pléiades images using the ASP toolchain.
+
+Usage: dsm_pleiades.py --toml=<toml_path>
+dsm_pleiades.py -h | --help
+
+Options:
+--toml=<toml_path>      Path to the toml parameter file
+
+"""
 
 import numpy as np
 from dsm_toml_file import DsmToml, DsmLock
@@ -9,6 +22,8 @@ from osgeo import gdal
 import os
 import sys
 import subprocess
+
+import docopt
 
 def sh(cmd: str):
     """
@@ -36,10 +51,12 @@ class DsmRun:
         self.dem_utm = None
 
     def run(self):
+        print("run")
         self._workspace_ready()
         not_implemented()
 
     def _setup_folders(self):
+        print("setup folder")
         output_folder = self.toml.output.path
         self.output = output_folder
 
@@ -67,6 +84,7 @@ class DsmRun:
         * orbit kml
         * img is mapprojected
         """
+        print("workspace ready")
         # Setup the working folder
         self._setup_folders()
         sh("cd {}".format(self.toml.output.path))
@@ -182,8 +200,18 @@ class DsmRun:
 
 
 def cli():
-    print("launch cli...")
-    print("...\n...\n...")
+    print('>Launching cli...')
+    arguments = docopt.docopt(__doc__)
+    toml_path = arguments['--toml']
+
+    print(">init run")
+    run = DsmRun(toml_path)
+    print(">run init, starting run")
+
+    run.run()
+
+    print(">run completed")
+
     not_implemented()
 
 
