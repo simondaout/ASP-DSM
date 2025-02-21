@@ -103,7 +103,7 @@ class PleiadesDIM:
 
         sh("gdalbuildvrt {} {}".format(
             vrt,
-            " ".join(self.img_paths)
+            " ".join([os.path.join(self.folder, p) for p in self.img_paths])
         ))
 
         sh("gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER {} {}".format(
@@ -120,7 +120,8 @@ class PleiadesDIM:
         elif len(self.img_paths) > 1:
             # abstract on the R_C_
             self.img_tif = os.path.splitext(self.img_paths[0])[0][:-5] + ".TIF"
-        os.path.isfile(os.path.join(self.folder, self.img_tif))
+        self.img_tif = os.path.join(self.folder, self.img_tif)
+        return os.path.isfile(self.img_tif)
     
     def prepare(self):
         """
@@ -128,8 +129,7 @@ class PleiadesDIM:
         """
         if not self._check_already_prepared():
             # Doesnt run if already prepared...
-            self._ensure_tif()
-            if len(self.img_paths) > 1:
+            if len(self.img_paths) > 1 or os.path.splitext(self.img_paths[0])[1] != ".TIF":
                 self._merge_tiles_tif()
 
 

@@ -72,7 +72,8 @@ class DsmRun:
             self.available_as = {"dem": avail[0], "ba": avail[1], "orbit": avail[2], "mapproj": avail[3]}
         
         for k in range(len(self.toml.sources)):
-            os.mkdir(output_folder + "/frag" + str(k + 1))
+            if not os.path.isdir(output_folder + "/frag" + str(k + 1)):
+                os.mkdir(output_folder + "/frag" + str(k + 1))
     
     def _workspace_ready(self):
         """
@@ -99,30 +100,35 @@ class DsmRun:
         else: 
             self.dem = self.toml.run.dem_path
         self.dem_utm = os.path.splitext(self.dem)[0] + "_utm.tif"
-        sh("gdalwarp -tr {} -t_srs {} {} {} -r {}".format(self.toml.output.gdal_out_res,
+        sh("gdalwarp -tr {} -t_srs {} {} {} -r {}".format(" ".join([str(res) for res in self.toml.output.gdal_out_res]),
                                                            "EPSG:" + str(self.toml.output.utm),
                                                            self.dem,
                                                            self.dem_utm,
                                                            self.toml.output.resamp_m))
 
         for s in range(len(self.toml.sources)):
-            frag_folder = os.join(self.output, "frag" + str(s + 1))
+            frag_folder = os.path.join(self.output, "frag" + str(s + 1))
             sh("cd {}".format(frag_folder))
+            print("frag", s)
             
             # Bundle adjust the images
             if not self.available_as["ba"] or sc.bundle_asjust:
+                print("bundle")
                 self._bundle_adjust(s)
 
             # Create orbit kml visualization
             if not self.available_as["orbit"] or sc.orbit_viz:
+                print("orbit")
                 self._orbit_viz(s)
                 
             # Mapproject the images
             if not self.available_as["mapproj"] or sc.map_project:
+                print("mapproject")
                 self._map_project(s)
 
     def _raw_data_ready(self):
-        src = self.toml.sources
+        src = [s.paths for s in self.toml.sources]
+        print(src)
 
         for s in src:
             if not len(s) == 2 and not len(s) == 3:
@@ -137,7 +143,7 @@ class DsmRun:
             self.bboxs.append([k.bbox for k in dims])
         
         self.bboxs = np.array(self.bboxs)
-        self.global_bbox = [np.min(self.bboxs[:, 0]), np.max(self.bboxs[:, 1]), np.min(self.bboxs[:, 2]), np.max(self.bboxs[:, 3])]
+        self.global_bbox = [np.min(self.bboxs[:, :, 0]), np.max(self.bboxs[:, :, 1]), np.min(self.bboxs[:, :, 2]), np.max(self.bboxs[:, :, 3])]
         # 2% padding for security
         bbox_width = self.global_bbox[1] - self.global_bbox[0]
         bbox_height = self.global_bbox[3] - self.global_bbox[2]
@@ -155,34 +161,41 @@ class DsmRun:
         self.dem = os.path.join(self.toml.output.path, dst + ".tif")
     
     def _get_src_dim_from_nb(self, source_nb):
-        source = self.toml.sources[source_nb]
+        source = self.toml.sources[source_nb].paths
 
         src = source[0] + ' ' + source[1]
+        tifs = " ".join(self.tifs[source_nb])
         dims = self.dims[source_nb][0].dim_path + ' ' + self.dims[source_nb][1].dim_path
         if len(source) == 3:
             src = src + ' ' + source[2]
             dims = dims + ' ' + self.dims[source_nb][2].dim_path
-        return src, dims
+        return src, dims, tifs
+
+    def frag_folder(self, source_nb):
+        return os.path.join(self.output, "frag" + str(source_nb + 1))
 
     def _bundle_adjust(self, source_nb):
-        src, dims = self._get_src_dim_from_nb(source_nb)
+        src, dims, tifs = self._get_src_dim_from_nb(source_nb)
+        frag_folder = self.frag_folder(source_nb)
+        print("frag folder", frag_folder)
 
-        ba_params = "--datum wgs84 -o ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1"
+        ba_params = "--datum wgs84 -o {}/ba/run --ip-detect-method 0 --ip-per-tile 50 --ip-inlier-factor 0.4 --num-passes 2 --robust-threshold 0.5 --parameter-tolerance 1e-10 --max-iterations 500 --camera-weight 0 --tri-weight 0.1".format(frag_folder)
 
-        sh("bundle_adjust {} {} -t {} {}".format(src, dims, self.toml.stereo.session_type, ba_params))
+        sh("bundle_adjust {} {} -t {} {}".format(tifs, dims, self.toml.stereo.session_type, ba_params))
 
     def _orbit_viz(self, source_nb):
-        src, dims = self._get_src_dim_from_nb(source_nb)
+        not_implemented()
+        src, dims, tifs = self._get_src_dim_from_nb(source_nb)
 
         sh("orbitviz -t {} {} {} -o orbitviz_sat_pos_adjusted.kml --bundle-adjust-prefix ba/run".format(
             self.toml.stereo.session_type,
-            src,
+            tifs,
             dims
         ))
 
     def _map_project(self, source_nb):
-        src, dims = self._get_src_dim_from_nb(source_nb)
-        src, dims = src.split(' '), dims.split(' ')
+        src, dims, tifs = self._get_src_dim_from_nb(source_nb)
+        src, dims, tifs = src.split(' '), dims.split(' '), tifs.split(" ")
 
         for k in range(len(src)):
             sh("mapproject -t {} --t_srs EPSG:{} --tr {} {} {} {} {} --bundle-adjust-prefix ba/run --nodata-value 0".format(
@@ -190,7 +203,7 @@ class DsmRun:
                 self.toml.output.utm,
                 self.toml.output.resmp,
                 self.dem_utm,
-                src[k],
+                tifs[k],
                 dims[k],
                 os.path.join(self.output, "mapproj", "mp_" + os.path.basename(src[k]))
             ))

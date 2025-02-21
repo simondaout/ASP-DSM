@@ -30,6 +30,7 @@ map_project = false
 stereo = false
 rastering = false
 merge = false
+# the next two will be computed only if set to true
 ms_orthorectified = false
 error_estimation = false
 

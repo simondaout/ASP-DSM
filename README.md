@@ -3,8 +3,10 @@ Processing tool package written in bash, python, and Gdal programming language f
 
 ![Alt text](logo-pnts.jpg)
 
-To download the package
-=============
+The present usage generates DSM using the ASP toolchain. It handles the Pleiades images ditribution variability, fetching DEM, stereo of two or three images, merging of neighboring images.
+
+## To download the package
+
 ```git clone https://github.com/simondaout/ASP-DSM.git```
 
 To update the software:
@@ -17,29 +19,23 @@ git push
 leave building
 ```
 
-Installation
-=============
+## Installation
+
 * The majortiy of the scripts are written in bash and python and do not need installation. Just add them to your PATH. If you are using module, an example of modulefile is available in /contrib/modulefile/asp-dsm
 
+* Dependencies: pygdalsar, nsbas, asp
 
-How to use it
-=============
-1) download SRTM or Copernicus DSM in your area and refer it to WGS84
-2) edit asp_parameter.txt file (example available in example directory)
-3) edit pair-list file (example available in example directory): list_pairs.txt
-4) run orthorectification and stereo: launch_stereo_pleiades.sh  -n list_pairs.txt 
-5) run post-processing check: check_process.sh list_pair.txt
-6) run mosaic multispectral images: launch_MS_pleiades.sh -n list_pairs.txt
-7) run alignement of two DSM and difference computation for error estimation: launch_align_diff.sh -n list_align.txt (see example/list_align.txt)
-8) run error estimation: dem_error_estimation.py --diff=diff-6703445101-6703446101-6708224101-6708225101/diff-dsm.tiff --slope=diff-6703445101-6703446101-6708224101-6708225101/dsm-slope.tiff --name=Oman
-9) get nan pixel ratio with plot: dem_nan_ratio.py --data=6620390301-6620391301/dsm_denoised_filtered.tiff --p
-10) run corr_eval: dem_corr_eval.sh -n list_pairs.txt
 
-Developpers & Contact
-=============
-```
-* Florian Leder : lg18102@hs-nb.de
-* Simon Daout: simon.daout@univ-lorraine.fr, Ass. Prof., CRPG, NANCY
-```
+## How to use it
+
+1) Download a pleiades image and unzip the folder
+2) Generate a parameter file and fill parameters' of interest and project-related parameters
+3) Launch the command with the parameter file path indicated
+
+## Developpers & Contact
+
+* `Florian Leder : lg18102@hs-nb.de`
+* `Simon Daout: simon.daout@univ-lorraine.fr, Ass. Prof., CRPG, NANCY`
+* `Leo Letellier: leo.letellier@univ-lorraine.fr, PhD Student, CRPG, NANCY`
 
  
