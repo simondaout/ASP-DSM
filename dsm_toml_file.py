@@ -1,10 +1,12 @@
 import tomli
+import os
 
 
 def parse_toml(file):
     with open(file, "rb") as f:
         toml = tomli.load(f)
     return toml
+    
 
 class DsmToml:
     def __init__(self, toml):
@@ -17,6 +19,9 @@ class DsmToml:
         self.step_control = StepControl(toml.get("step_control", None))
         self.stereo = Stereo(toml["stereo"])
         self.rastering = Rastering(toml["rastering"])
+
+    def lock_at(self, path):
+        pass
 
 
 class Run:
@@ -67,7 +72,7 @@ class Stereo:
         
         dic_adv = dic.get("advance", {})
 
-        self.alignement_method = dic_adv.get("alignement_method", True)
+        self.alignement_method = dic_adv.get("alignement_method", "none")
         self.nodata_value_stereo = dic_adv.get("nodata_value_stereo", 0)
         self.corr_tile_size = dic_adv.get("corr_tile_size", 1024)
         self.corr_seed_mode = dic_adv.get("corr_seed_mode", 1)
@@ -116,27 +121,75 @@ class Rastering:
 class DsmLock:
     def __init__(self):
         self.path = None
-        self.lock = None
+
+        self.name = ""
+        self.dem = ""
+        self.frags = [] # array of (bool, bool)
 
     def new(self, toml: DsmToml, lock_path):
         self.path = lock_path
-        pass
+        frag_nb = len(toml.sources)
+        
+        self.name = toml.run.name
+        self.frags = [[False, False] for _ in range(frag_nb)]
+        self.write_lock()
         return self
 
     def open(self, lock_path):
         self.path = lock_path
-        self.lock = parse_toml(lock_path)
-        return self
+        lock = parse_toml(lock_path)
 
-    def check_commons(self):
-        """
-        Check if there is an entry for the given attribute in the lock file
-        """
-        dem = self.lock["lock"].get("dem", "")
-        bundle_adjust = self.lock["lock"].get("bundle_adjust", "")
-        orbit_viz = self.lock["lock"].get("orbit_viz", "")
-        mapproj = self.lock["lock"].get("mapproj", "")
-        return [len(k) != 0 for k in [dem, bundle_adjust, orbit_viz, mapproj]]
+        self.name = lock["lock"]["name"]
+        self.dem = lock["lock"]["dem_utm"]
+
+        frags = lock["frag"]
+        for f in frags:
+            self.frags.append([f["bundle_adjust"], f["mapproj"]])
+        
+        return self
+    
+    def lock_dem(self, dem_utm_path):
+        # add dem to lock
+        self.dem = dem_utm_path
+        self.write_lock()
+    
+    def is_dem_lock(self):
+        return len(self.dem) != 0
+    
+    def lock_ba(self, frag_nb):
+        self.frags[frag_nb][0] = True
+        self.write_lock()
+
+    def is_ba_lock(self, frag_nb):
+        return self.frags[frag_nb][0]
+    
+    def lock_mp(self, frag_nb):
+        self.frags[frag_nb][1] = True
+        self.write_lock()
+
+    def is_mp_lock(self, frag_nb):
+        return self.frags[frag_nb][1]
+
+    def write_lock(self):
+        # hardcoded because tomli_w currently not installed on server
+        content = '''[lock]\nname = "{}"\ndem_utm = "{}"\n\n'''.format(
+            self.name,
+            self.dem
+        )
+
+        frags = ""
+        for k in range(len(self.frags)):
+            ba = "true" if self.frags[k][0] else "false"
+            mp = "true" if self.frags[k][1] else "false"
+            frag = '''[[frag]]\nbundle_adjust = {}\nmapproj = {}\n'''.format(
+                ba,
+                mp
+            )
+            frags = frags + frag
+
+        with open(self.path, "w") as f:
+            f.write(content + frags)
+
 
 class DsmParamLock:
     def __init__(self):

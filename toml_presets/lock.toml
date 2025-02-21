@@ -1,12 +1,7 @@
 [lock]
 name = "Name DSM"
-info = "more informations about the run"
-dem = ""
-bundle_adjust = ""
-orbit_viz = ""
-mapproj = ""
+dem_utm = ""
 
-[[source]]
-paths = ["", "", ""]
-
-[[source]]
+[[frag]]
+bundle_adjust = false
+mapproj = false

@@ -28,20 +28,28 @@ import docopt
 def sh(cmd: str):
     """
     Launch a shell command
+
+    # Example
+
+    ````
+    sh("ls -l | wc -l")
+    ````
+
     """
     subprocess.call(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT, env=os.environ)
 
 class DsmRun:
-    def __init__(self, toml):
+    """
+    Handles the command run and the linear steps succession
+    """
+    def __init__(self, toml: str):
+        """
+        :param toml: path to the toml parameter file
+        """
         self.toml_path = toml
         self.toml = DsmToml(toml)
         self.lock = None
         self.output = None
-        
-        # ante stereo
-        self.available_as = {"dem": False, "ba": False, "orbit": False, "mapproj": False}
-        # post stereo
-        self.available_ps = {"stereo": False, "rastering": False, "merge": False, "ms": False, "error": False}
         
         self.dims = []
         self.tifs = []
@@ -51,11 +59,23 @@ class DsmRun:
         self.dem_utm = None
 
     def run(self):
+        """
+        Call the major steps to run:
+
+        * Init the workspace (raw data, output folder, ba, orbit, mapproj)
+        * Performs the stereo (and merge)
+        * Produces ms orthorectified images
+        * Launch the error estimation
+        """
         print("run")
         self._workspace_ready()
+        self._run_process_stereo()
         not_implemented()
 
     def _setup_folders(self):
+        """
+        Setup the output folders and the lock file.
+        """
         print("setup folder")
         output_folder = self.toml.output.path
         self.output = output_folder
@@ -68,9 +88,7 @@ class DsmRun:
             self.lock = DsmLock().new(self.toml, lock_path)
         else:
             self.lock = DsmLock().open(lock_path)
-            avail = self.lock.check_commons()
-            self.available_as = {"dem": avail[0], "ba": avail[1], "orbit": avail[2], "mapproj": avail[3]}
-        
+
         for k in range(len(self.toml.sources)):
             if not os.path.isdir(output_folder + "/frag" + str(k + 1)):
                 os.mkdir(output_folder + "/frag" + str(k + 1))
@@ -95,16 +113,20 @@ class DsmRun:
         self._raw_data_ready()
 
         # Prepare the DEM
-        if not self.available_as["dem"] or sc.dem:
-            self._compute_dem()
+        if not self.lock.is_dem_lock():
+            if len(self.toml.run.dem_path) == 0 or sc.dem:
+                self._compute_dem()
+            else: 
+                self.dem = self.toml.run.dem_path
+            self.dem_utm = os.path.splitext(self.dem)[0] + "_utm.tif"
+            sh("gdalwarp -tr {} -t_srs {} {} {} -r {}".format(" ".join([str(res) for res in self.toml.output.gdal_out_res]),
+                                                            "EPSG:" + str(self.toml.output.utm),
+                                                            self.dem,
+                                                            self.dem_utm,
+                                                            self.toml.output.resamp_m))
+            self.lock.lock_dem(self.dem_utm)
         else: 
-            self.dem = self.toml.run.dem_path
-        self.dem_utm = os.path.splitext(self.dem)[0] + "_utm.tif"
-        sh("gdalwarp -tr {} -t_srs {} {} {} -r {}".format(" ".join([str(res) for res in self.toml.output.gdal_out_res]),
-                                                           "EPSG:" + str(self.toml.output.utm),
-                                                           self.dem,
-                                                           self.dem_utm,
-                                                           self.toml.output.resamp_m))
+            self.dem_utm = self.lock.dem
 
         for s in range(len(self.toml.sources)):
             frag_folder = os.path.join(self.output, "frag" + str(s + 1))
@@ -112,21 +134,28 @@ class DsmRun:
             print("frag", s)
             
             # Bundle adjust the images
-            if not self.available_as["ba"] or sc.bundle_asjust:
+            if not self.lock.is_ba_lock(s) or sc.bundle_asjust:
                 print("bundle")
                 self._bundle_adjust(s)
+                self.lock.lock_ba(s)
 
             # Create orbit kml visualization
-            if not self.available_as["orbit"] or sc.orbit_viz:
+            if sc.orbit_viz:
                 print("orbit")
                 self._orbit_viz(s)
                 
             # Mapproject the images
-            if not self.available_as["mapproj"] or sc.map_project:
+            if not self.lock.is_mp_lock(s) or sc.map_project:
                 print("mapproject")
                 self._map_project(s)
+                self.lock.lock_mp(s)
 
     def _raw_data_ready(self):
+        """
+        Read and prepare the raw data. Ensure that all image info are found. Ensure that the raw images are available as one .TIF file.
+
+        Computes a global bbox for all the acquisitions.
+        """
         src = [s.paths for s in self.toml.sources]
         print(src)
 
@@ -154,6 +183,9 @@ class DsmRun:
 
     
     def _compute_dem(self):
+        """
+        Fetch a DEM using pygdalsar referring to the ellipsoid.
+        """
         long1, long2, lat1, lat2 = self.global_bbox[0], self.global_bbox[1], self.global_bbox[2], self.global_bbox[3]
         dst = os.path.join(self.toml.output.path, "cop_dem30_{}_{}_{}_{}".format(int(long1), int(long2), int(lat1), int(lat2)))
         sh("my_getDemFile.py -s COP_DEM --bbox={},{},{},{} -c /data/ARCHIVES/DEM/COP-DEM_GLO-30-DTED/DEM".format(long1, long2, lat1, lat2))
@@ -161,6 +193,9 @@ class DsmRun:
         self.dem = os.path.join(self.toml.output.path, dst + ".tif")
     
     def _get_src_dim_from_nb(self, source_nb):
+        """
+        Helper function to get src, dims and tifs full paths for a given fragment.
+        """
         source = self.toml.sources[source_nb].paths
 
         src = source[0] + ' ' + source[1]
@@ -172,9 +207,17 @@ class DsmRun:
         return src, dims, tifs
 
     def frag_folder(self, source_nb):
+        """
+        Helper function to acces the full path of the current fragment folder
+        """
         return os.path.join(self.output, "frag" + str(source_nb + 1))
 
     def _bundle_adjust(self, source_nb):
+        """
+        Perform the bundle adjustment of the current fragment.
+
+        Uses asp.
+        """
         src, dims, tifs = self._get_src_dim_from_nb(source_nb)
         frag_folder = self.frag_folder(source_nb)
         print("frag folder", frag_folder)
@@ -184,38 +227,170 @@ class DsmRun:
         sh("bundle_adjust {} {} -t {} {}".format(tifs, dims, self.toml.stereo.session_type, ba_params))
 
     def _orbit_viz(self, source_nb):
-        not_implemented()
-        src, dims, tifs = self._get_src_dim_from_nb(source_nb)
+        """
+        Prepare a kml visualization of orbits for the current fragment.
 
-        sh("orbitviz -t {} {} {} -o orbitviz_sat_pos_adjusted.kml --bundle-adjust-prefix ba/run".format(
+        Uses asp.
+        """
+        src, dims, tifs = self._get_src_dim_from_nb(source_nb)
+        frag_folder = self.frag_folder(source_nb)
+
+        sh("orbitviz -t {} {} {} -o {}/orbitviz_sat_pos_adjusted.kml --bundle-adjust-prefix {}/ba/run".format(
             self.toml.stereo.session_type,
             tifs,
-            dims
+            dims,
+            frag_folder,
+            frag_folder
         ))
 
     def _map_project(self, source_nb):
+        """
+        Perform the map projection onto the DEM for the current fragment.
+
+        Uses asp.
+        """
         src, dims, tifs = self._get_src_dim_from_nb(source_nb)
         src, dims, tifs = src.split(' '), dims.split(' '), tifs.split(" ")
+        frag_folder = self.frag_folder(source_nb)
 
         for k in range(len(src)):
-            sh("mapproject -t {} --t_srs EPSG:{} --tr {} {} {} {} {} --bundle-adjust-prefix ba/run --nodata-value 0".format(
+            out_file = os.path.join(self.output, frag_folder, "mapproj", "mp_" + os.path.basename(tifs[k]))
+            print("img", tifs[k])
+            print("camera", dims[k])
+            print("output", out_file)
+            sh("mapproject -t {} --t_srs EPSG:{} --tr {} {} {} {} {} --bundle-adjust-prefix {}/ba/run --nodata-value 0".format(
                 self.toml.stereo.session_type,
                 self.toml.output.utm,
                 self.toml.output.resmp,
                 self.dem_utm,
                 tifs[k],
                 dims[k],
-                os.path.join(self.output, "mapproj", "mp_" + os.path.basename(src[k]))
+                out_file,
+                frag_folder
             ))
 
     def _run_process_stereo(self):
+        """
+        Run the stereo and post processing operations:
+
+        * stereo
+        * rastering (point2dem)
+        * merging (if mutliple images)
+        * ms ortho
+        * error estimation
+        """
+        for s in range(len(self.toml.sources)):
+            self._stereo(s)
+        not_implemented()
+    
+    def _stereo(self, source_nb):
+        src, dims, tifs = self._get_src_dim_from_nb(source_nb)
+        src, dims, tifs = src.split(' '), dims.split(' '), tifs.split(" ")
+        frag_folder = self.frag_folder(source_nb)
+        mp_img = [os.path.join(self.output, frag_folder, "mapproj", "mp_" + os.path.basename(tifs[k])) for k in range(len(src))]
+
+        pre_args = "-t {} --alignment-method {}".format(
+            self.toml.stereo.session_type,
+            self.toml.stereo.alignement_method
+        )
+
+        session = "--nodata-value {} {} --threads-multiprocess {}".format(
+            self.toml.stereo.nodata_value_stereo,
+            self.dem_utm,
+            self.toml.run.threads
+        )
+
+        st = self.toml.stereo
+        stereo = ('--prefilter-mode {} --prefilter-kernel-width {} --corr-kernel "{}" --cost-mode {} '
+        '--stereo-algorithm {} --corr-tile-size {} --subpixel-mode {} --subpixel-kernel "{}" --corr-seed-mode {} '
+        "--xcorr-threshold {} --min-xcorr-level {} --sgm-collar-size {}").format(
+            st.prefilter_mode,
+            st.prefilter_kernel_width,
+            " ".join([str(k) for k in st.corr_kernel]),
+            st.cost_mode,
+            st.st_alg,
+            st.corr_tile_size,
+            st.subp_mode,
+            " ".join([str(k) for k in st.subp_kernel]),
+            st.corr_seed_mode, 
+            st.xcorr_threshold,
+            st.min_xcorr_lvl,
+            st.sgm_collar_size
+        )
+
+        dn = self.toml.stereo.denoising
+        denoising = ("--rm-quantile-percentile {} --rm-quantile-multiple {} "
+        '--filter-mode {} --rm-half-kernel "{}" --rm-min-matches {}'
+        " --rm-threshold {} --max-mean-diff {}").format(
+            dn.rm_quant_pc,
+            dn.rm_quantile_multiple,
+            dn.filter_mode,
+            " ".join([str(k) for k in dn.rm_half_kernel]),
+            dn.rm_min_matches,
+            dn.rm_threshold,
+            dn.max_mean_diff
+        )
+
+        ft = self.toml.stereo.filtering
+        filtering = "--median-filter-size {} --texture-smooth-size {} --texture-smooth-scale {}".format(
+            ft.median_filter_size,
+            ft.texture_smooth_size,
+            ft.texture_smooth_scale
+        )
+
+        post_args = "{} {} {} {} --bundle-adjust-prefix frag{}/ba/run".format(
+            session,
+            stereo,
+            denoising,
+            filtering,
+            source_nb + 1
+        )
+
+        sh("parallel_stereo {} {} {} frag{}/demPleiades/dem {}".format(
+            pre_args,
+            " ".join(mp_img), 
+            " ".join(dims),
+            source_nb + 1,
+            post_args
+        ))
+
+    def _rastering(self):
+        not_implemented()
+        # need to go in folder output of stereo to launch point2dem in place
+        sh('cd {}')
+        sh("point2dem --t_srs EPSG:{} --tr {} dem-PC.tif --median-filter-params {} "
+           "--dem-hole-fill-len {} --erode-length {} --nodata-value {} "
+           "--tif-compress {} --max-valid-triangulation-error {} --remove-outliers-param {} --remove-outliers")
+        
+        sh("gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dem-DEM.tif ../dsm_denoised_filtered.tiff")
+
+    def _merge(self):
+        not_implemented()
+        sh("gdalbuildvrt vrt.tif *dem-DEM.tif")
+        sh("gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER vrt.tif dsm.tif")
+        sh("gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dsm.tif dsmyyyy_denoised_filtered.tif")
+        os.remove("vrt.tif")
+        os.remove("dsm.tif")
+
+    def _ms_ortho(self):
+        # need to rewrite mosaic ms
+        not_implemented()
+
+    def _error_estimation(self):
+        # need to rewrite error estim
         not_implemented()
 
 
 def cli():
+    """
+    Defines the argument handling by docopt and init the run
+    """
     print('>Launching cli...')
     arguments = docopt.docopt(__doc__)
     toml_path = arguments['--toml']
+
+    if not os.path.isfile(toml_path):
+        raise ValueError("Invalid path given to the cli, recheck your inputs.")
 
     print(">init run")
     run = DsmRun(toml_path)
@@ -229,6 +404,11 @@ def cli():
 
 
 def not_implemented():
+    """
+    Little message to display to show that a feature is not implemented yet.
+
+    As it raises an error, the program stops here.
+    """
     raise NotImplementedError("not implemented...\n\n\t(ㅠ﹏ㅠ)\n")
 
 
