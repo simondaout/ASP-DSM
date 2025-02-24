@@ -6,7 +6,7 @@ def parse_toml(file):
     with open(file, "rb") as f:
         toml = tomli.load(f)
     return toml
-    
+
 
 class DsmToml:
     def __init__(self, toml):
@@ -20,8 +20,10 @@ class DsmToml:
         self.stereo = Stereo(toml["stereo"])
         self.rastering = Rastering(toml["rastering"])
 
-    def lock_at(self, path):
-        pass
+    def has_stereo_change(self, other):
+        if self.step_control.stereo ^ other.step_control.stereo:
+            return True
+        return self.toml_dic["stereo"] != other.toml_dic["stereo"]
 
 
 class Run:
@@ -51,7 +53,7 @@ class StepControl:
     # can not be indicated
     def __init__(self, dic):
         self.dem = dic.get("dem", True)
-        self.bundle_asjust = dic.get("bundle_adjust", True)
+        self.bundle_adjust = dic.get("bundle_adjust", True)
         self.orbit_viz = dic.get("orbit_viz", True)
         self.map_project = dic.get("map_project", True)
         self.stereo = dic.get("stereo", True)
@@ -119,28 +121,52 @@ class Rastering:
 
 
 class DsmLock:
+    """
+    Logic handling for the lock system
+    """
     def __init__(self):
         self.path = None
 
         self.name = ""
         self.dem = ""
         self.frags = [] # array of (bool, bool)
+        self.param = {}
 
     def new(self, toml: DsmToml, lock_path):
+        """
+        Create a lock system for a new project
+
+        :param toml: toml to create the project for
+        :param lock_path: path where to create the lock
+        """
         self.path = lock_path
         frag_nb = len(toml.sources)
+        self.run = 1
         
         self.name = toml.run.name
         self.frags = [[False, False] for _ in range(frag_nb)]
+
+        self.param["dem_utm"] = toml.run.dem_path
+        self.param["gdal_out_res"] = toml.output.gdal_out_res
+        self.param["utm"] = toml.output.utm
+        self.param["resamp_m"] = toml.output.resamp_m
+        self.param["session_type"] = toml.stereo.session_type
+        self.param["resmp"] = toml.output.resmp
+
         self.write_lock()
         return self
 
     def open(self, lock_path):
+        """
+        Open an existing lock to resume work on this project
+        """
         self.path = lock_path
         lock = parse_toml(lock_path)
 
         self.name = lock["lock"]["name"]
         self.dem = lock["lock"]["dem_utm"]
+        self.run = int(lock["lock"]["run"])
+        self.param = lock["lock"]["parameters"]
 
         frags = lock["frag"]
         for f in frags:
@@ -149,18 +175,33 @@ class DsmLock:
         return self
     
     def lock_dem(self, dem_utm_path):
-        # add dem to lock
+        """
+        Add the DEM to lock. It will be reused for other operations in this project.
+
+        :param dem_utm_path: path to the dem
+        """
         self.dem = dem_utm_path
         self.write_lock()
     
     def is_dem_lock(self):
+        """
+        Bool to check if a DEM has been locked.
+        """
         return len(self.dem) != 0
     
     def lock_ba(self, frag_nb):
+        """
+        Add the bundle adjustment to lock [bool] for the current fragment.
+
+        :param frag_nb: number of the fragment current under processing
+        """
         self.frags[frag_nb][0] = True
         self.write_lock()
 
     def is_ba_lock(self, frag_nb):
+        """
+        Bool to check if th bundle adjustment of the current fragment has been locked.
+        """
         return self.frags[frag_nb][0]
     
     def lock_mp(self, frag_nb):
@@ -169,31 +210,66 @@ class DsmLock:
 
     def is_mp_lock(self, frag_nb):
         return self.frags[frag_nb][1]
+    
+    def new_run(self):
+        """
+        Initialize a new run (run counter + 1).
+        """
+        self.run += 1
+        self.write_lock()
+
+    def current_run(self):
+        """
+        Get the last run number
+        """
+        return self.run
 
     def write_lock(self):
+        """
+        Write and update lock file.
+        """
         # hardcoded because tomli_w currently not installed on server
-        content = '''[lock]\nname = "{}"\ndem_utm = "{}"\n\n'''.format(
+        content = '''[lock]\nname = "{}"\ndem_utm = "{}"\nrun = "{}"\n\n'''.format(
             self.name,
-            self.dem
+            self.dem,
+            self.run
+        )
+
+        print(self.param)
+
+        param = '[lock.parameters]\ndem_path = "{}"\ngdal_out_res = "{}"\nutm = "{}"\nresamp_m = "{}"\nsession_type = "{}"\nresmp = "{}"\n\n'.format(
+            self.param["dem_path"],
+            self.param["gdal_out_res"],
+            self.param["utm"],
+            self.param["resamp_m"],
+            self.param["session_type"],
+            self.param["resmp"]
         )
 
         frags = ""
         for k in range(len(self.frags)):
             ba = "true" if self.frags[k][0] else "false"
             mp = "true" if self.frags[k][1] else "false"
-            frag = '''[[frag]]\nbundle_adjust = {}\nmapproj = {}\n'''.format(
+            frag = '''[[frag]]\nbundle_adjust = {}\nmapproj = {}\n\n'''.format(
                 ba,
                 mp
             )
             frags = frags + frag
 
         with open(self.path, "w") as f:
-            f.write(content + frags)
+            f.write(content + param + frags)
+    
+    def has_preproc_change(self, toml: DsmToml):
+        """
+        Check if the preprocessing parameters has change between a new toml and the lock.
+        """
+        return self.param["dem_utm"] == toml.run.dem_path and \
+        self.param["gdal_out_res"] == toml.output.gdal_out_res and \
+        self.param["utm"] == toml.output.utm and \
+        self.param["resamp_m"] == toml.output.resamp_m and \
+        self.param["session_type"] == toml.stereo.session_type and \
+        self.param["resmp"] == toml.output.resmp
 
-
-class DsmParamLock:
-    def __init__(self):
-        pass
 
 if __name__ == "__main__":
     pass

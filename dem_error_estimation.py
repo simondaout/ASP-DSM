@@ -26,10 +26,7 @@ from matplotlib import pyplot as plt
 import pandas as pd
 from pathlib import Path
 from math import *
-try:
-    import docopt
-except:
-    import contrib.python.docopt
+import docopt
 
 #############
 # FUNCTIONS #

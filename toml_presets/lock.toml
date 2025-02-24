@@ -1,6 +1,15 @@
 [lock]
 name = "Name DSM"
 dem_utm = ""
+run = 1
+
+[lock.parameters]
+dem_path = ""
+gdal_out_res = [30, 30]
+utm = 32645
+resamp_m = "cubic"
+session_type = "pleiades"
+resmp = 1
 
 [[frag]]
 bundle_adjust = false

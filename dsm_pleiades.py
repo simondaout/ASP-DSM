@@ -36,7 +36,7 @@ def sh(cmd: str):
     ````
 
     """
-    subprocess.call(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT, env=os.environ)
+    subprocess.run(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT, env=os.environ)
 
 class DsmRun:
     """
@@ -50,6 +50,7 @@ class DsmRun:
         self.toml = DsmToml(toml)
         self.lock = None
         self.output = None
+        self.run_nb = 0
         
         self.dims = []
         self.tifs = []
@@ -70,7 +71,8 @@ class DsmRun:
         print("run")
         self._workspace_ready()
         self._run_process_stereo()
-        not_implemented()
+        if self.toml.step_control.ms_orthorectified:
+            self._ms_ortho()
 
     def _setup_folders(self):
         """
@@ -92,6 +94,24 @@ class DsmRun:
         for k in range(len(self.toml.sources)):
             if not os.path.isdir(output_folder + "/frag" + str(k + 1)):
                 os.mkdir(output_folder + "/frag" + str(k + 1))
+
+        run_nb = self.lock.current_run()
+        for k in range(1, run_nb):
+            toml_run = DsmToml(os.path.join(output_folder, "run_" + str(k), "asp_dsm.lock"))
+            if not self.toml.has_stereo_change(toml_run):
+                self.run_nb = k
+                
+        if self.run_nb == 0: # run start at 1
+            self.lock.new_run()
+            self.run_nb = self.lock.current_run()
+
+        if not os.path.isdir(os.path.join(output_folder, "run_" + str(self.run_nb))):
+            os.mkdir(os.path.join(output_folder, "run_" + str(self.run_nb)))
+
+        sh("cp {} {}/asp_dsm.lock".format(
+            self.toml_path,
+            os.path.join(self.output, "run_" + str(self.run_nb))
+        ))
     
     def _workspace_ready(self):
         """
@@ -134,7 +154,7 @@ class DsmRun:
             print("frag", s)
             
             # Bundle adjust the images
-            if not self.lock.is_ba_lock(s) or sc.bundle_asjust:
+            if not self.lock.is_ba_lock(s) or sc.bundle_adjust:
                 print("bundle")
                 self._bundle_adjust(s)
                 self.lock.lock_ba(s)
@@ -191,6 +211,10 @@ class DsmRun:
         sh("my_getDemFile.py -s COP_DEM --bbox={},{},{},{} -c /data/ARCHIVES/DEM/COP-DEM_GLO-30-DTED/DEM".format(long1, long2, lat1, lat2))
         sh("gdal_translate -of Gtiff {} {}".format(dst + ".dem", dst + ".tif"))
         self.dem = os.path.join(self.toml.output.path, dst + ".tif")
+
+        os.remove(os.path.join(self.toml.output.path, dst + ".dem"))
+        os.remove(os.path.join(self.toml.output.path, dst + ".dem.aux.xml"))
+        os.remove(os.path.join(self.toml.output.path, dst + ".dem.rsc"))
     
     def _get_src_dim_from_nb(self, source_nb):
         """
@@ -275,35 +299,39 @@ class DsmRun:
 
         * stereo
         * rastering (point2dem)
-        * merging (if mutliple images)
+        * merging (if multiple images)
         * ms ortho
         * error estimation
         """
         for s in range(len(self.toml.sources)):
             self._stereo(s)
-        not_implemented()
+            self._rastering(s)
+        self._merge(len(self.tifs))
+        if self.toml.step_control.error_estimation:
+            self._error_estimation()
     
     def _stereo(self, source_nb):
+        print(">stereo")
         src, dims, tifs = self._get_src_dim_from_nb(source_nb)
         src, dims, tifs = src.split(' '), dims.split(' '), tifs.split(" ")
         frag_folder = self.frag_folder(source_nb)
         mp_img = [os.path.join(self.output, frag_folder, "mapproj", "mp_" + os.path.basename(tifs[k])) for k in range(len(src))]
 
-        pre_args = "-t {} --alignment-method {}".format(
+        pre_args = '-t {} --alignment-method {}'.format(
             self.toml.stereo.session_type,
             self.toml.stereo.alignement_method
         )
 
-        session = "--nodata-value {} {} --threads-multiprocess {}".format(
+        session = '--nodata-value {} {} --threads-multiprocess {}'.format(
             self.toml.stereo.nodata_value_stereo,
             self.dem_utm,
             self.toml.run.threads
         )
 
         st = self.toml.stereo
-        stereo = ('--prefilter-mode {} --prefilter-kernel-width {} --corr-kernel "{}" --cost-mode {} '
-        '--stereo-algorithm {} --corr-tile-size {} --subpixel-mode {} --subpixel-kernel "{}" --corr-seed-mode {} '
-        "--xcorr-threshold {} --min-xcorr-level {} --sgm-collar-size {}").format(
+        stereo = ('--prefilter-mode {} --prefilter-kernel-width {} --corr-kernel {} --cost-mode {} '
+        '--stereo-algorithm {} --corr-tile-size {} --subpixel-mode {} --subpixel-kernel {} --corr-seed-mode {} '
+        '--xcorr-threshold {} --min-xcorr-level {} --sgm-collar-size {}').format(
             st.prefilter_mode,
             st.prefilter_kernel_width,
             " ".join([str(k) for k in st.corr_kernel]),
@@ -319,9 +347,9 @@ class DsmRun:
         )
 
         dn = self.toml.stereo.denoising
-        denoising = ("--rm-quantile-percentile {} --rm-quantile-multiple {} "
-        '--filter-mode {} --rm-half-kernel "{}" --rm-min-matches {}'
-        " --rm-threshold {} --max-mean-diff {}").format(
+        denoising = ('--rm-quantile-percentile {} --rm-quantile-multiple {} '
+        '--filter-mode {} --rm-half-kernel {} --rm-min-matches {}'
+        ' --rm-threshold {} --max-mean-diff {}').format(
             dn.rm_quant_pc,
             dn.rm_quantile_multiple,
             dn.filter_mode,
@@ -332,13 +360,13 @@ class DsmRun:
         )
 
         ft = self.toml.stereo.filtering
-        filtering = "--median-filter-size {} --texture-smooth-size {} --texture-smooth-scale {}".format(
+        filtering = '--median-filter-size {} --texture-smooth-size {} --texture-smooth-scale {}'.format(
             ft.median_filter_size,
             ft.texture_smooth_size,
             ft.texture_smooth_scale
         )
 
-        post_args = "{} {} {} {} --bundle-adjust-prefix frag{}/ba/run".format(
+        post_args = '{} {} {} {} --bundle-adjust-prefix frag{}/ba/run'.format(
             session,
             stereo,
             denoising,
@@ -346,37 +374,89 @@ class DsmRun:
             source_nb + 1
         )
 
-        sh("parallel_stereo {} {} {} frag{}/demPleiades/dem {}".format(
+        cmd = 'parallel_stereo {} {} {} frag{}/demPleiades/dem {}'.format(
             pre_args,
             " ".join(mp_img), 
             " ".join(dims),
             source_nb + 1,
             post_args
+        )
+
+        sh(cmd)
+
+    def _rastering(self, source_nb):
+        """
+        Transform the point cloud produce by the stereo step into a raster, for the current fragment.
+
+        :param source_nb: current fragment
+        """
+        r = self.toml.rastering
+        frag_folder = self.frag_folder(source_nb)
+        sh("cd {}".format(
+            frag_folder
         ))
 
-    def _rastering(self):
-        not_implemented()
-        # need to go in folder output of stereo to launch point2dem in place
-        sh('cd {}')
-        sh("point2dem --t_srs EPSG:{} --tr {} dem-PC.tif --median-filter-params {} "
-           "--dem-hole-fill-len {} --erode-length {} --nodata-value {} "
-           "--tif-compress {} --max-valid-triangulation-error {} --remove-outliers-param {} --remove-outliers")
-        
-        sh("gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dem-DEM.tif ../dsm_denoised_filtered.tiff")
+        point_params = "--median-filter-params {} --tif-compress {} --max-valid-triangulation-error {} --remove-outliers-param {} --remove-outliers".format(
+            r.median_filter_params,
+            r.tif_compress,
+            r.max_valid_triangulation_error,
+            r.remove_outlier_param
+        )
 
-    def _merge(self):
+        sh("point2dem --t_srs EPSG:{} --tr {} demPleiades/dem-PC.tif {}".format(
+            self.toml.output.utm, 
+            self.toml.output.res,
+            point_params
+        ))
+        
+        sh("gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic {} {}".format(
+            os.path.join(frag_folder, "demPleiades", "dem-DEM.tif"),
+            os.path.join(frag_folder, "dem_raster.tif")
+        ))
+
+    def _merge(self, frag_nb):
+        """
+        Combine all fragments raster results into one global raster
+
+        :param frag_nb: number of total fragments
+        """
         not_implemented()
-        sh("gdalbuildvrt vrt.tif *dem-DEM.tif")
-        sh("gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER vrt.tif dsm.tif")
-        sh("gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic dsm.tif dsmyyyy_denoised_filtered.tif")
-        os.remove("vrt.tif")
-        os.remove("dsm.tif")
+        frag_dirs = []
+        for k in range(frag_nb):
+            frag_dirs.append(self.frag_folder(k + 1))
+
+        run_folder = os.path.join(self.output, "run_" + str(self.run_nb))
+        
+        sh("gdalbuildvrt {} {}".format(
+            os.path.join(run_folder, "vrt.tif"),
+            " ".join([os.path.join(f, "dem_raster.tif") for f in frag_dirs])
+        ))
+
+        sh("gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER {} {}".format(
+            os.path.join(run_folder, "vrt.tif"),
+            os.path.join(run_folder, "dsm.tif")
+        ))
+
+        sh("gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic {} {}".format(
+            os.path.join(run_folder, "dsm.tif"),
+            os.path.join(run_folder, "dsm_result.tif")
+        ))
+
+        os.remove(os.path.join(run_folder, "vrt.tif"))
+        os.remove(os.path.join(run_folder, "dsm.tif"))
 
     def _ms_ortho(self):
+        """
+        Produce orthorectified images from MS pléiades
+        """
+        # does not depend on stereo run
         # need to rewrite mosaic ms
         not_implemented()
 
     def _error_estimation(self):
+        """
+        Estimate the errors associated to the produced DEM
+        """
         # need to rewrite error estim
         not_implemented()
 

@@ -30,7 +30,7 @@ def sh(cmd: str):
     ````
 
     """
-    subprocess.call(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT, env=os.environ)
+    subprocess.run(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT, env=os.environ)
 
 class Preset:
     def __init__(self, preset: str):
