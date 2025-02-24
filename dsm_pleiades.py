@@ -64,9 +64,8 @@ class DsmRun:
         Call the major steps to run:
 
         * Init the workspace (raw data, output folder, ba, orbit, mapproj)
-        * Performs the stereo (and merge)
+        * Performs the stereo (and merge, opt error estimation)
         * Produces ms orthorectified images
-        * Launch the error estimation
         """
         print("run")
         self._workspace_ready()
@@ -90,6 +89,9 @@ class DsmRun:
             self.lock = DsmLock().new(self.toml, lock_path)
         else:
             self.lock = DsmLock().open(lock_path)
+            if self.lock.has_preproc_change(self.toml):
+                raise ValueError("Preproc parameters cannot change in the same project"
+                                 "\nPlease create a new project to change these parameters.")
 
         for k in range(len(self.toml.sources)):
             if not os.path.isdir(output_folder + "/frag" + str(k + 1)):
@@ -98,12 +100,16 @@ class DsmRun:
         run_nb = self.lock.current_run()
         for k in range(1, run_nb):
             toml_run = DsmToml(os.path.join(output_folder, "run_" + str(k), "asp_dsm.lock"))
-            if not self.toml.has_stereo_change(toml_run):
+            # if the run doesnt already exists with these parameters, or that the user
+            # specifically ask for recomputation
+            if not self.toml.has_stereo_change(toml_run) and not self.toml.step_control.stereo:
                 self.run_nb = k
-                
+
         if self.run_nb == 0: # run start at 1
             self.lock.new_run()
             self.run_nb = self.lock.current_run()
+
+        print("Run nb:", self.run_nb)
 
         if not os.path.isdir(os.path.join(output_folder, "run_" + str(self.run_nb))):
             os.mkdir(os.path.join(output_folder, "run_" + str(self.run_nb)))

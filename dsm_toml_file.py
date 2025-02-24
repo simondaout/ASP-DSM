@@ -52,15 +52,13 @@ class Source:
 class StepControl:
     # can not be indicated
     def __init__(self, dic):
-        self.dem = dic.get("dem", True)
-        self.bundle_adjust = dic.get("bundle_adjust", True)
-        self.orbit_viz = dic.get("orbit_viz", True)
-        self.map_project = dic.get("map_project", True)
-        self.stereo = dic.get("stereo", True)
-        self.rastering = dic.get("rastering", True)
-        self.merge = dic.get("merge", True)
-        self.ms_orthorectified = dic.get("ms_orthorectified", True)
-        self.error_estimation = dic.get("error_estimation", True)
+        self.dem = dic.get("dem", False)
+        self.bundle_adjust = dic.get("bundle_adjust", False)
+        self.orbit_viz = dic.get("orbit_viz", False)
+        self.map_project = dic.get("map_project", False)
+        self.stereo = dic.get("stereo", False)
+        self.ms_orthorectified = dic.get("ms_orthorectified", False)
+        self.error_estimation = dic.get("error_estimation", False)
 
 
 class Stereo:
@@ -263,12 +261,20 @@ class DsmLock:
         """
         Check if the preprocessing parameters has change between a new toml and the lock.
         """
-        return self.param["dem_utm"] == toml.run.dem_path and \
-        self.param["gdal_out_res"] == toml.output.gdal_out_res and \
-        self.param["utm"] == toml.output.utm and \
-        self.param["resamp_m"] == toml.output.resamp_m and \
+        # print(self.param["gdal_out_res"] == toml.output.gdal_out_res)
+        # print(self.param["gdal_out_res"], toml.output.gdal_out_res)
+        # print(type(self.param["gdal_out_res"]), type(toml.output.gdal_out_res))
+        # print(self.param["utm"] == toml.output.utm)
+        # print(self.param["utm"], toml.output.utm)
+        # print(self.param["resamp_m"] == toml.output.resamp_m)
+        # print(self.param["session_type"] == toml.stereo.session_type)
+        # print(self.param["resmp"] == toml.output.resmp)
+
+        return not (self.param["gdal_out_res"] == str(toml.output.gdal_out_res) and \
+        self.param["utm"] == str(toml.output.utm) and \
+        self.param["resamp_m"] == str(toml.output.resamp_m) and \
         self.param["session_type"] == toml.stereo.session_type and \
-        self.param["resmp"] == toml.output.resmp
+        self.param["resmp"] == str(toml.output.resmp))
 
 
 if __name__ == "__main__":

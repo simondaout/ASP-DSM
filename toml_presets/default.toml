@@ -27,10 +27,9 @@ dem = false
 bundle_adjust = false
 orbit_viz = false
 map_project = false
+# if true, will recompute as a new run even if already exists
 stereo = false
-rastering = false
-merge = false
-# the next two will be computed only if set to true
+# If true will be computed otherwise
 ms_orthorectified = false
 error_estimation = false
 
