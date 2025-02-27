@@ -144,7 +144,7 @@ class DsmLock:
         self.name = toml.run.name
         self.frags = [[False, False] for _ in range(frag_nb)]
 
-        self.param["dem_utm"] = toml.run.dem_path
+        self.param["dem_path"] = toml.run.dem_path
         self.param["gdal_out_res"] = toml.output.gdal_out_res
         self.param["utm"] = toml.output.utm
         self.param["resamp_m"] = toml.output.resamp_m

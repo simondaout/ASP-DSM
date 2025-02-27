@@ -35,7 +35,7 @@ def sh(cmd: str):
 class Preset:
     def __init__(self, preset: str):
         self.preset = preset
-        self.avail = ["default"]
+        self.avail = ["default", "mountain"]
         self.base_folder = os.path.dirname(__file__)
 
         if self.preset not in self.avail:

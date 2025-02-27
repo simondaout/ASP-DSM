@@ -1,0 +1,71 @@
+# ASP - DSM RUN CONFIG FILE (v0.0.1)
+
+[run]
+name = "Bhote DSM"
+info = "2016, BhoteKoshi Nepal, mountainous and vegetation, SGM subp11"
+dem_path = "" 
+threads = 20
+
+[output]
+path = "/drive/dsm/my_dsm_run"
+utm = 32645
+res = 2
+resmp = 1
+gdal_out_res = [30, 30]
+resamp_m = "cubic"
+
+[[source]]
+paths = ["", "", ""]
+
+[step_control]
+dem = false
+bundle_adjust = false
+map_project = false
+stereo = false
+orbit_viz = false
+ms_orthorectified = false
+error_estimation = false
+
+[stereo]
+session_type = "pleiades"
+st_alg = 3
+cost_mode = 4
+subp_mode = 11
+corr_kernel = [7, 7]
+subp_kernel = [5, 5]
+
+[stereo.advance]
+aligment_method = "none"
+nodata_value_stereo = 0
+corr_tile_size = 1024
+corr_seed_mode = 1
+xcorr_threshold = 2
+min_xcorr_lvl = 1
+sgm_collar_size = 256
+prefilter_mode = 2
+prefilter_kernel_width = 1.4
+
+[stereo.denoising]
+rm_quantile_multiple = -1
+rm_clean_pass = 1
+rm_quant_pc = 0.95
+filter_mode = 2
+rm_half_kernel = [7, 7]
+rm_min_matches = 50
+rm_threshold = 4
+max_mean_diff = 4
+
+[stereo.filtering]
+do = true
+median_filter_size = 3
+texture_smooth_size = 3
+texture_smooth_scale = 0.13
+
+[rastering]
+median_filter_params = [9, 50]
+dem_hole_fill_len = 200
+erode_length = 0
+nodata_value_dem = 0
+tif_compress = "Deflate"
+max_valid_triangulation_error = 4.0
+remove_outlier_param = [75.0, 3.0]

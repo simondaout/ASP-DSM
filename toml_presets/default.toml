@@ -1,44 +1,74 @@
 # ASP - DSM RUN CONFIG FILE (v0.0.1)
 
 [run]
-name = "Name DSM"
-info = "more informations about the run"
-dem_path = "" # if no dem, get it from bbox
+# Basic infos about the run
+name = "Bhote DSM"
+# Can indicate: date, location, terrain particularity, ...
+info = "2016, BhoteKoshi Nepal, mountainous and vegetation, SGM subp11"
+# Indicate here the path to the DEM ONLY if you really want to use an existing DEM
+dem_path = "" 
+# Maximal number of threads to perform the stereo with
 threads = 20
 
 [output]
-path = ""
+# Path where the processing and results will be saved
+# The folder doesn't need to already exists, but will be dedicated to this run
+path = "/drive/dsm/my_dsm_run"
+# srs using for DEM projection
 utm = 32645
+# Resolution of the resulting DSM
 res = 2
+# Grid size, dimension of pixels on the ground
 resmp = 1
+# Resolution of the initial DEM
 gdal_out_res = [30, 30]
+# Resampling method for the initial DEM
 resamp_m = "cubic"
 
+# For each spatially separated acquisition specify the images paths
 [[source]]
+# Specify the path to the DIM*.XML file of the two or three images of the stereo
 paths = ["", "", ""]
 
+# Create a new `source` for each spatially separated acquisition
 [[source]]
 paths = ["", ""]
 
+# Fine grain control over the launch process
 [step_control]
-# if item false or not indicated, will recompute only if missing
+# if false will recompute only if missing
 # otherwise overwrite existing files
 dem = false
 bundle_adjust = false
-orbit_viz = false
 map_project = false
 # if true, will recompute as a new run even if already exists
 stereo = false
-# If true will be computed otherwise
+# If true will be computed, otherwise skipped
+orbit_viz = false
 ms_orthorectified = false
 error_estimation = false
 
+# Stereo parameters
+# See:
+# https://stereopipeline.readthedocs.io/en/latest/tools/parallel_stereo.html
+# https://stereopipeline.readthedocs.io/en/latest/stereodefault.html
 [stereo]
+# stereo session type to use for processing
 session_type = "pleiades"
+# stereo algorithm: BM (0), SGM (1), MGM(2), fMGM(3)
 st_alg = 3
+# cost function for integer correlation: 
+# abs diff (0), squared diff (1), normalized cross corr (3)
+# census transform (3), ternary census transform (4)
 cost_mode = 4
+# subpixel correlation method
+# no (0), parabola (1), Bayes EM (2), affine wdw (3)
+# Phase corr (4), Lucas Kanade (5), Bayes + Gamma noise distrib (6)
+# SGM: none (7), linear (8), poly4 (9), cosine (10), parabola (11), blend (12)
 subp_mode = 11
+# Size of the correlation kernel (odd nb)
 corr_kernel = [7, 7]
+# Size of the subpixel correlation kernel (odd nb)
 subp_kernel = [5, 5]
 
 [stereo.advance]
@@ -63,8 +93,8 @@ rm_threshold = 4
 max_mean_diff = 4
 
 [stereo.filtering]
-# if filtering is not indicated or do is false, will perform stereo withour post filtering
-do = true
+# if filtering is not indicated or do is false, will perform stereo without post filtering
+do = true # currently nor used
 median_filter_size = 3
 texture_smooth_size = 3
 texture_smooth_scale = 0.13

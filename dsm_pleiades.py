@@ -25,9 +25,11 @@ import subprocess
 
 import docopt
 
-def sh(cmd: str):
+def sh(cmd: str, shell=True):
     """
     Launch a shell command
+
+    As shell=True, all single call is made in a separate shell
 
     # Example
 
@@ -36,7 +38,7 @@ def sh(cmd: str):
     ````
 
     """
-    subprocess.run(cmd, shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT, env=os.environ)
+    subprocess.run(cmd, shell=shell, stdout=sys.stdout, stderr=subprocess.STDOUT, env=os.environ)
 
 class DsmRun:
     """
@@ -132,7 +134,6 @@ class DsmRun:
         print("workspace ready")
         # Setup the working folder
         self._setup_folders()
-        sh("cd {}".format(self.toml.output.path))
         sc = self.toml.step_control
 
         # Check if raw data is ready, i.e single .TIF
@@ -156,7 +157,6 @@ class DsmRun:
 
         for s in range(len(self.toml.sources)):
             frag_folder = os.path.join(self.output, "frag" + str(s + 1))
-            sh("cd {}".format(frag_folder))
             print("frag", s)
             
             # Bundle adjust the images
@@ -225,6 +225,8 @@ class DsmRun:
     def _get_src_dim_from_nb(self, source_nb):
         """
         Helper function to get src, dims and tifs full paths for a given fragment.
+
+        :param source_nb: number of the current fragment
         """
         source = self.toml.sources[source_nb].paths
 
@@ -247,6 +249,8 @@ class DsmRun:
         Perform the bundle adjustment of the current fragment.
 
         Uses asp.
+
+        :param source_nb: number of the current fragment
         """
         src, dims, tifs = self._get_src_dim_from_nb(source_nb)
         frag_folder = self.frag_folder(source_nb)
@@ -261,6 +265,8 @@ class DsmRun:
         Prepare a kml visualization of orbits for the current fragment.
 
         Uses asp.
+
+        :param source_nb: number of the current fragment
         """
         src, dims, tifs = self._get_src_dim_from_nb(source_nb)
         frag_folder = self.frag_folder(source_nb)
@@ -278,6 +284,8 @@ class DsmRun:
         Perform the map projection onto the DEM for the current fragment.
 
         Uses asp.
+
+        :param source_nb: number of the current fragment
         """
         src, dims, tifs = self._get_src_dim_from_nb(source_nb)
         src, dims, tifs = src.split(' '), dims.split(' '), tifs.split(" ")
@@ -310,13 +318,24 @@ class DsmRun:
         * error estimation
         """
         for s in range(len(self.toml.sources)):
+            frag_folder = self.frag_folder(s)
+            # if not os.path.isfile(os.path.join(frag_folder, "demPleiades", "dem-PC.tif")):
+            #     self._stereo(s)
+            # if not os.path.isfile(os.path.join(frag_folder, "demPleiades", "dem-DEM.tif")):
+            #     self._rastering(s)
             self._stereo(s)
             self._rastering(s)
+        
         self._merge(len(self.tifs))
         if self.toml.step_control.error_estimation:
             self._error_estimation()
     
     def _stereo(self, source_nb):
+        """
+        Launch parallel_stereo, core of the stereo execution
+
+        :param source_nb: number of the current fragment
+        """
         print(">stereo")
         src, dims, tifs = self._get_src_dim_from_nb(source_nb)
         src, dims, tifs = src.split(' '), dims.split(' '), tifs.split(" ")
@@ -398,22 +417,20 @@ class DsmRun:
         """
         r = self.toml.rastering
         frag_folder = self.frag_folder(source_nb)
-        sh("cd {}".format(
-            frag_folder
-        ))
 
         point_params = "--median-filter-params {} --tif-compress {} --max-valid-triangulation-error {} --remove-outliers-param {} --remove-outliers".format(
-            r.median_filter_params,
+            " ".join([str(k) for k in r.median_filter_params]),
             r.tif_compress,
             r.max_valid_triangulation_error,
-            r.remove_outlier_param
+            " ".join([str(k) for k in r.remove_outlier_param])
         )
 
-        sh("point2dem --t_srs EPSG:{} --tr {} demPleiades/dem-PC.tif {}".format(
+        sh("cd {};point2dem --t_srs EPSG:{} --tr {} demPleiades/dem-PC.tif {}".format(
+            frag_folder,
             self.toml.output.utm, 
             self.toml.output.res,
             point_params
-        ))
+        )) # could add -o to avoid using cd
         
         sh("gdalwarp -wm 512 -q -co COMPRESS=DEFLATE -overwrite -of GTiff -ot Float32 -r cubic {} {}".format(
             os.path.join(frag_folder, "demPleiades", "dem-DEM.tif"),
@@ -426,16 +443,19 @@ class DsmRun:
 
         :param frag_nb: number of total fragments
         """
-        not_implemented()
         frag_dirs = []
         for k in range(frag_nb):
-            frag_dirs.append(self.frag_folder(k + 1))
+            frag_dirs.append(self.frag_folder(k))
 
         run_folder = os.path.join(self.output, "run_" + str(self.run_nb))
+
+        print(self.tifs)
+        print(frag_nb)
+        print(frag_dirs)
         
         sh("gdalbuildvrt {} {}".format(
             os.path.join(run_folder, "vrt.tif"),
-            " ".join([os.path.join(f, "dem_raster.tif") for f in frag_dirs])
+            " ".join([os.path.join(f, "demPleiades", "dem-DEM.tif") for f in frag_dirs])
         ))
 
         sh("gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER {} {}".format(
@@ -485,8 +505,6 @@ def cli():
     run.run()
 
     print(">run completed")
-
-    not_implemented()
 
 
 def not_implemented():
