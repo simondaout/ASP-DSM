@@ -58,8 +58,9 @@ def multiplot_slope_error(slope, out_path, option, diff, plot_slope_params):
     y = diff.flatten() # diff_flat - used to get mean/median error
 
     if(len(plot_slope_params) == 0):
-        max_slope = np.nanpercentile(x,99.8)
-        slope_steps = 1 + int(max_slope/10)
+        max_slope = 70.
+        #max_slope = np.nanpercentile(x,99.8)
+        slope_steps = 1 + int(max_slope/8)
     else:
         max_slope = plot_slope_params[0]
         slope_steps = plot_slope_params[1]
@@ -148,7 +149,6 @@ if(arguments['--plot_slope']):
     plot_slope_params = (int(plot_slope[0]), int(plot_slope[1]))
 else:
     plot_slope_params = ()
-
 
 #############
 # PLOT DATA #

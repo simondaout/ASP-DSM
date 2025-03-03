@@ -19,11 +19,11 @@ RESAMP_M="cubic" # resample method
 SESSION_TYPE="pleiades" # -t  # pleiades option does not produce better results than rpc
 A_M="none" # --alignment-method
 NO_DATA_S=0 # --nodata_value stereo
-CORR_KERNEL="7 7" # --corr_kernel # SGM algo allows for small correlation windows
-COST_MODE=3 # --cost-mode # use 3 on good texture terrain and 4 on textureless terrain
+CORR_KERNEL="7 7" # --corr_kernel # MGM algo allows for small correlation windows and is faster than block-matching
+COST_MODE=3 # --cost-mode # use 3 with MGM
 ST_ALG=3 # --stereo_algorithm
 CORR_T_S=1024 # --corr-tile-size # larger tile sizes produce better results but consume more memory.
-SUBP_MODE=9 # --subpixel-mode # use 9 for high rugosity terrain and 2 for flat terrains
+SUBP_MODE=9 # --subpixel-mode # use 9 for high resolution/small objets or 2 for long-wavelength 
 SUBP_KERNEL="5 5" # --subpixel-kernel
 CORR_S_MODE=1 # --corr_seed_mode # 1: Use low-res disparity from stereo
 XCORR_TH=2 # --xcorr-threshold # double run time of SGM algo
@@ -38,9 +38,9 @@ RM_QUANT_MULT=-1 # --rm-quantile-multiple: default: -1 -> filter-mode=2, rm-min-
 RM_CLEAN_PASS=1 # --rm-cleanup-passes
 RM_QUANT_PC=0.95 # --rm-quantile-percentile # default: discarded disparities > quantile*rm-quantile-multiple
 FILTER_MODE=2 # --filter-mode (1: use mean difference, default: 2, use threshold & min_matches (higher filtering) )
-RM_HALF_KERN="7 7" # --rm-half-kernel: Low confidence pixel removal kernel (default: 5 5): decrease to remove more points. A 5 × 5 half kernel would result in an 11 × 11 kernel with 121 pixels in it.
+RM_HALF_KERN="7 7" # --rm-half-kernel: Low confidence pixel removal kernel (default: 5 5). A 5 × 5 half kernel would result in an 11 × 11 kernel with 121 pixels in it.
 ## if FILTER_MODE=2 # Filter by discarding pixels at which percentage of neighboring disparities that are within rm-threshold of current disparity is less than rm-min-matches.
-RM_MIN_MATCHES=50 # --rm-min-matches:  For filter-mode=2, minimum number of pixels to be matched to keep sample (default: 60, for filter mode 2).
+RM_MIN_MATCHES=50 # --rm-min-matches:  For filter-mode=2, minimum percentage of pixels to be matched to keep sample (default: 60, for filter mode 2).
 RM_THRESHOLD=4  # --rm-threshold: Maximum distance (default: 3, for filter-mode=2)
 ## if FILTER_MODE=1
 MAX_DIFF=4  # --max-mean-diff: Maximum difference (default: 3, for filter-mode=1).
