@@ -86,88 +86,53 @@ OUTPUT_DIR=$ROOT/$NAME1"-"$NAME2
 if [[ -d $DATA_DIR"/"$NAME1"/IMG_PHR1A_P_001/" ]]
 then
 	# set input images
-	DIR1=$DATA_DIR"/"$NAME1"/IMG_PHR1A_P_001"
-	if [[ $SESSION_TYPE = 'rpc' ]]; then
-	Lrpc=$DIR1"/RPC_PHR1A_P_"$DATE1"_SEN_"$NAME1"-1.XML"
-	elif [[ $SESSION_TYPE = 'pleiades' ]]; then
-	Lrpc=$DIR1"/DIM_PHR1A_P_"$DATE1"_SEN_"$NAME1"-1.XML"
+	sat="PHR1A" 
+	DIR1=$DATA_DIR"/"$NAME1"/IMG_"$sat"_P_001"
+	DIR2=$DATA_DIR"/"$NAME2"/IMG_"$sat"_P_001"
+elif [[ -d $DATA_DIR"/"$NAME1"/IMG_PHR1B_P_001/" ]]
+then
+	# set input images
+    sat="PHR1B"
+    DIR1=$DATA_DIR"/"$NAME1"/IMG_"$sat"_P_001"
+    DIR2=$DATA_DIR"/"$NAME2"/IMG_"$sat"_P_001"
+fi
+echo $DIR1
+
+if [[ $SESSION_TYPE = 'rpc' ]]; then
+	Lrpc=$(ls $DIR1"/RPC_"$sat"_P_${DATE1}_SEN_${NAME1}-"*.XML 2>/dev/null | head -n 1)
+	Rrpc=$(ls $DIR2"/RPC_"$sat"_P_${DATE2}_SEN_${NAME2}-"*.XML 2>/dev/null | head -n 1)
+elif [[ $SESSION_TYPE = 'pleiades' ]]; then
+	Lrpc=$(ls $DIR1"/DIM_"$sat"_P_${DATE1}_SEN_${NAME1}-"*.XML 2>/dev/null | head -n 1)	
+	Rrpc=$(ls $DIR2"/DIM_"$sat"_P_${DATE2}_SEN_${NAME2}-"*.XML 2>/dev/null | head -n 1)
 	else
 	echo "Unknown session type, choose rpc or pleiades"
     echo ; exit	
-	fi
-else
-	# set input images
-	DIR1=$DATA_DIR"/"$NAME1"/IMG_PHR1B_P_001"
-	if [[ $SESSION_TYPE = 'rpc' ]]; then
-	Lrpc=$DIR1"/RPC_PHR1B_P_"$DATE1"_SEN_"$NAME1"-1.XML"
-	elif [[ $SESSION_TYPE = 'pleiades' ]]; then
-	Lrpc=$DIR1"/DIM_PHR1B_P_"$DATE1"_SEN_"$NAME1"-1.XML"
-	else
-	echo "Unknown session type, choose rpc or pleiades"
-    echo ; exit
-	fi	
 fi
-cp $Lrpc $DIR1/$DATE1.XML
+
+cp $Lrpc "$DIR1/$DATE1.XML"
+echo $Lrpc "$DIR1/$DATE1.XML"
 IMG1=$DIR1"/forward_$DATE1.tif"
 IMG1_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_forward_$DATE1.tif"
 ORTHO1=$OUTPUT_DIR"/orthoimage_forward_$DATE1.tif"
-
-if [[ -d $DATA_DIR"/"$NAME2"/IMG_PHR1A_P_001/" ]]
-then
-	# set input images
-	DIR2=$DATA_DIR"/"$NAME2"/IMG_PHR1A_P_001"
-	if [[ $SESSION_TYPE = 'rpc' ]]; then
-	Rrpc=$DIR2"/RPC_PHR1A_P_"$DATE2"_SEN_"$NAME2"-1.XML"
-	elif [[ $SESSION_TYPE = 'pleiades' ]]; then
-	Rrpc=$DIR2"/DIM_PHR1A_P_"$DATE2"_SEN_"$NAME2"-1.XML"
-	else
-	echo "Unknown session type, choose rpc or pleiades"
-    echo ; exit
-	fi	
-else
-	# set input images
-	DIR2=$DATA_DIR"/"$NAME2"/IMG_PHR1B_P_001"
-	if [[ $SESSION_TYPE = 'rpc' ]]; then
-	Rrpc=$DIR2"/RPC_PHR1B_P_"$DATE2"_SEN_"$NAME2"-1.XML"
-	elif [[ $SESSION_TYPE = 'pleiades' ]]; then
-	Rrpc=$DIR2"/DIM_PHR1B_P_"$DATE2"_SEN_"$NAME2"-1.XML"
-	else
-	echo "Unknown session type, choose rpc or pleiades"
-    echo ; exit
-	fi	
-fi
-cp $Rrpc $DIR2/$DATE2.XML
+cp $Rrpc "$DIR2/$DATE2.XML"
+echo $Rrpc "$DIR2/$DATE2.XML"
 IMG2=$DIR2"/backward_$DATE2.tif"
 IMG2_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_backward_$DATE2.tif"
 ORTHO2=$OUTPUT_DIR"/orthoimage_backward_$DATE2.tif"
 
 if [[ $TRISTEREO = 'TRUE'  ]]; then
-
-if [[ -d $DATA_DIR"/"$NAME3"/IMG_PHR1A_P_001/" ]]
-then
-    # set input images
-    DIR3=$DATA_DIR"/"$NAME3"/IMG_PHR1A_P_001"
-    if [[ $SESSION_TYPE = 'rpc' ]]; then
-    Mrpc=$DIR3"/RPC_PHR1A_P_"$DATE3"_SEN_"$NAME3"-1.XML"
-    elif [[ $SESSION_TYPE = 'pleiades' ]]; then
-    Mrpc=$DIR3"/DIM_PHR1A_P_"$DATE3"_SEN_"$NAME3"-1.XML"
-    else
-    echo "Unknown session type, choose rpc or pleiades"
-    echo ; exit
-    fi
-else
-    # set input images
-    DIR3=$DATA_DIR"/"$NAME3"/IMG_PHR1B_P_001"
-    if [[ $SESSION_TYPE = 'rpc' ]]; then
-    Mrpc=$DIR3"/RPC_PHR1B_P_"$DATE3"_SEN_"$NAME3"-1.XML"
-    elif [[ $SESSION_TYPE = 'pleiades' ]]; then
-    Mrpc=$DIR3"/DIM_PHR1B_P_"$DATE3"_SEN_"$NAME3"-1.XML"
-    else
-    echo "Unknown session type, choose rpc or pleiades"
-    echo ; exit
-    fi
+	# set input images
+	DIR3=$DATA_DIR"/"$NAME3"/IMG_"$sat"_P_001"
+    
+if [[ $SESSION_TYPE = 'rpc' ]]; then
+		Mrpc=$(ls $DIR3"/RPC_"$sat"_P_${DATE3}_SEN_${NAME3}-"*.XML 2>/dev/null | head -n 1)
+elif [[ $SESSION_TYPE = 'pleiades' ]]; then
+		Mrpc=$(ls $DIR3"/DIM_"$sat"_P_${DATE3}_SEN_${NAME3}-"*.XML 2>/dev/null | head -n 1)
 fi
+
 cp $Mrpc $DIR3/$DATE3.XML
+echo $DIR3/$DATE3.XML 
+echo
 IMG3=$DIR3"/nadir_$DATE3.tif"
 IMG3_MP=$OUTPUT_DIR"/MAPPROJ/mapproj_nadir_$DATE3.tif"
 ORTHO3=$OUTPUT_DIR"/orthoimage_nadir_$DATE3.tif"
@@ -199,24 +164,15 @@ if [[ -f $IMG1 ]]; then
 	echo "$IMG1 exists."
 else
 	# These need to be mosaicked before being used
-	echo $DIR1 
-	if ls $DIR1/*R*C*.JP2 1> /dev/null 2>&1; then	
-		gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".JP2"
+	if compgen -G "$DIR1/*R*C*.JP2" > /dev/null; then
+	gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".JP2"
+	gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".JP2"
 	else
-		gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".TIF"
+	gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".TIF"
+	gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".TIF"
 	fi 
 	#actual self-contained image can be produced with:
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR1"/vrt.tif" $IMG1
-fi
-
-if [[ -f $IMG2 ]]; then
-    echo "$IMG2 exists."
-else
-	if ls $DIR2/*R*C*.JP2 1> /dev/null 2>&1; then
-		gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".JP2"
-	else
-		gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".TIF"
-	fi	
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR2"/vrt.tif" $IMG2
 fi
 
@@ -224,8 +180,8 @@ if [[ $TRISTEREO = 'TRUE'  ]]; then
 if [[ -f $IMG3 ]]; then
     echo "$IMG3 exists."
 else
-	if [[ -f $DIR3"/"*"R"*"C"*".JP2" ]]; then
-    gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".JP2"
+    if compgen -G "$DIR3/*R*C*.JP2" > /dev/null; then
+	gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".JP2"
 	else 
 	gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".TIF" 
     fi 
