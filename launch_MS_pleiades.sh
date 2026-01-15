@@ -138,25 +138,25 @@ ORTHO2=$OUTPUT_DIR"/orthoimage_MS_backward_$DATE2.tif"
 
 if [[ $TRISTEREO = 'TRUE'  ]]; then
 
-if [[ -d $DATA_DIR"/"$NAME3"/IMG_PHR1A_P_001/" ]]
+if [[ -d $DATA_DIR"/"$NAME3"/IMG_PHR1A_MS_002/" ]]
 then
     # set input images
-    DIR3=$DATA_DIR"/"$NAME3"/IMG_PHR1A_P_001"
+    DIR3=$DATA_DIR"/"$NAME3"/IMG_PHR1A_MS_002"
     if [[ $SESSION_TYPE = 'rpc' ]]; then
-    Mrpc=$DIR3"/RPC_PHR1A_P_"$DATE3"_SEN_"$NAME3"-1.XML"
+    Mrpc=$DIR3"/RPC_PHR1A_P_"$DATE3"_SEN_"$NAME3"-2.XML"
     elif [[ $SESSION_TYPE = 'pleiades' ]]; then
-    Mrpc=$DIR3"/DIM_PHR1A_P_"$DATE3"_SEN_"$NAME3"-1.XML"
+    Mrpc=$DIR3"/DIM_PHR1A_P_"$DATE3"_SEN_"$NAME3"-2.XML"
     else
     echo "Unknown session type, choose rpc or pleiades"
     echo ; exit
     fi
 else
     # set input images
-    DIR3=$DATA_DIR"/"$NAME3"/IMG_PHR1B_P_001"
+    DIR3=$DATA_DIR"/"$NAME3"/IMG_PHR1B_MS_002"
     if [[ $SESSION_TYPE = 'rpc' ]]; then
-    Mrpc=$DIR3"/RPC_PHR1B_P_"$DATE3"_SEN_"$NAME3"-1.XML"
+    Mrpc=$DIR3"/RPC_PHR1B_P_"$DATE3"_SEN_"$NAME3"-2.XML"
     elif [[ $SESSION_TYPE = 'pleiades' ]]; then
-    Mrpc=$DIR3"/DIM_PHR1B_P_"$DATE3"_SEN_"$NAME3"-1.XML"
+    Mrpc=$DIR3"/DIM_PHR1B_P_"$DATE3"_SEN_"$NAME3"-2.XML"
     else
     echo "Unknown session type, choose rpc or pleiades"
     echo ; exit
@@ -214,7 +214,6 @@ else
     gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".TIF"
     fi
     gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR3"/vrt.tif" $IMG3
-    gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".JPG"
 fi
 fi
 
