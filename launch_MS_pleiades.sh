@@ -193,16 +193,14 @@ fi
 if [[ -f $IMG1 ]]; then
 	echo "$IMG1 exists."
 else
-	# These need to be mosaicked before being used
+	if compgen -G "$DIR1/*R*C*.JP2" > /dev/null; then
+	gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".JP2"
+    gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".JP2"
+	else
 	gdalbuildvrt $DIR1"/vrt.tif" $DIR1"/"*"R"*"C"*".TIF"
-	#actual self-contained image can be produced with:
+    gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".TIF"
+    fi
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR1"/vrt.tif" $IMG1
-fi
-
-if [[ -f $IMG2 ]]; then
-    echo "$IMG2 exists."
-else
-	gdalbuildvrt $DIR2"/vrt.tif" $DIR2"/"*"R"*"C"*".TIF"
 	gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR2"/vrt.tif" $IMG2
 fi
 
@@ -210,8 +208,13 @@ if [[ $TRISTEREO = 'TRUE'  ]]; then
 if [[ -f $IMG3 ]]; then
     echo "$IMG3 exists."
 else
+	if compgen -G "$DIR3/*R*C*.JP2" > /dev/null; then
+    gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".JP2"
+    else
     gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".TIF"
+    fi
     gdal_translate -co TILED=YES -co BLOCKXSIZE=256 -co BLOCKYSIZE=256 -co BIGTIFF=IF_SAFER $DIR3"/vrt.tif" $IMG3
+    gdalbuildvrt $DIR3"/vrt.tif" $DIR3"/"*"R"*"C"*".JPG"
 fi
 fi
 
